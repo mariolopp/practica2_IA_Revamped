@@ -17,6 +17,7 @@ namespace QMind
         public event EventHandler OnEpisodeStarted;
         public event EventHandler OnEpisodeFinished;
         TablaQ tablaq;
+        WorldInfo worldInfo;
         public void Initialize(QMindTrainerParams qMindTrainerParams, WorldInfo worldInfo, INavigationAlgorithm navigationAlgorithm)
         {
             tablaq = new TablaQ();
@@ -31,30 +32,36 @@ namespace QMind
             Debug.Log("QMindTrainerDummy: DoStep");
 
             // Array de ints en el que se introducen los resultados (podría usarse tambien una clase state)
-            State playerState = new State(); // Estado del personaje
+            //State playerState = new State(); // Estado del personaje
           
-            // Mathf.Atan2(AgentPosition.x, OtherPosition.);
-
-
-            //float angle = Vector2.Angle(new Vector2(AgentPosition.x, AgentPosition.y),
-            //    new Vector2(OtherPosition.x, OtherPosition.y));
-
             // Calcular el angulo en grados hacia el oponente
             float signedangle = Mathf.Atan2(OtherPosition.y - AgentPosition.y, 
                 OtherPosition.x - AgentPosition.x) * Mathf.Rad2Deg;
-            signedangle = (signedangle + 360) % 360;
 
             // Calcular el cuadrante del oponente en base al angulo
+            signedangle = (signedangle + 360) % 360;
             Debug.Log("Angulo enemigo signed: "+ signedangle);
 
             int cuadrante = (int)(signedangle / 90);
             Debug.Log("Cuadrante obtenido: " + cuadrante);
 
-            playerState.cuadrante = cuadrante;
+            // Escribir el cuadrante en el estado
+            //playerState.cuadrante = cuadrante;
 
-            // Calcular distancia del agente a su oponente
+            //// Calcular distancia del agente a su oponente
             // distancia_Manhattan=∣x2−x1∣+∣y2−y1∣
 
+            float dist = Math.Abs(OtherPosition.x - AgentPosition.x) + Math.Abs(OtherPosition.y - AgentPosition.y);
+
+            int cercano = (int)Math.Floor(dist / 10);
+
+            Debug.Log("Cercania es: " + cercano);
+
+            // Escribir todos los datos en el estado actual
+            State playerState = new State(); // Estado del personaje
+
+            // Devuelve si arriba hay muro
+            //bool up = worldInfo.NextCell(AgentPosition, Directions.Up);
 
 
 
@@ -62,10 +69,7 @@ namespace QMind
 
 
 
-
-
-
-            int indice = tablaq.buscaIndiceEstado();
+            int indice = tablaq.buscaIndiceEstado(new State(1,0,0,0,0,3));
             Debug.Log("Indice del estado x: " + indice);
         }
     }

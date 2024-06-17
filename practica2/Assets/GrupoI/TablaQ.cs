@@ -9,15 +9,6 @@ public class TablaQ
     public int numFranjasDist = 4;  // 4 posibles franjas de distancia
     public int numCuadrantes = 4;   // 4 u 8 posibles cuadrantes enemigo respecto al agente
     
-    // Posiciones de cada direccion en el array
-    #region
-    private int posNorth = 0;
-    private int posSouth = 1;
-    private int posWest = 2;
-    private int posEast = 3;
-    private int posDist = 4;
-    private int posCuadrante = 5;
-    #endregion
 
     // Lista de estados
     public List<State> listStates;

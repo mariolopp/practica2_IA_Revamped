@@ -37,8 +37,8 @@ namespace QMind
             nav = navigationAlgorithm;
             nav.Initialize(worldInfo);     
             tablaq = new TablaQ();            
-            AgentPosition = worldInfo.RandomCell();
-            OtherPosition = worldInfo.RandomCell();           
+            //AgentPosition = worldInfo.RandomCell();
+            //OtherPosition = worldInfo.RandomCell();           
             episodeWorking = false;            
         }
 
@@ -100,46 +100,48 @@ namespace QMind
                             break;
                     }
 
-
-                    // FORMULA
-                    State nextState = getStateParam(nextPos, path[0]);
-                    int nextindice = tablaq.buscaIndiceEstado(nextState);
-
-                    // Calular recompensa
-
-                    // Si el siguiente estado es eliminatorio damos la mayor penalización
-                    float r = 0;
-                    if (nextPos.Walkable)
+                    if (path == null)
                     {
-                        float distActual = AgentPosition.Distance(OtherPosition, CellInfo.DistanceType.Manhattan);
-                        float distNew = nextPos.Distance(path[0], CellInfo.DistanceType.Manhattan);
-                        
-                        if ( distNew > distActual)
-                        {
-                            // Si el agente se ha alejado del enemigo
-                            r = 1;
-                        }
-                        else if (distNew < distActual)
-                        {
-                            // Si se ha acercado al enemigo
-                            r = -10;
-                        }
-                        else
-                        {
-                            // Si se ha mantenido
-                            r = 0;
-                        }
+                        // FORMULA
+                        State nextState = getStateParam(nextPos, path[0]);
+                        int nextindice = tablaq.buscaIndiceEstado(nextState);
 
-                        tablaq.listValues[indice][bestDirection] = (1 - parametros.alpha) * (tablaq.listValues[indice][bestDirection]) + parametros.alpha * (r + parametros.gamma * (tablaq.listValues[nextindice].Max()));
-                    }
-                    else if (!nextPos.Walkable) //|| nextPos == path[0]
-                    {
-                        episodeWorking = false;
-                        OnEpisodeFinished?.Invoke(this, EventArgs.Empty);
-                        // Si el estado al que ha caminado es eliminatorio
-                        r = -100;
-                        tablaq.listValues[indice][bestDirection] = (1 - parametros.alpha) * (tablaq.listValues[indice][bestDirection]) + parametros.alpha * (r + parametros.gamma * (tablaq.listValues[nextindice].Max()));                        // Acabar episodio
-                        
+                        // Calular recompensa
+
+                        // Si el siguiente estado es eliminatorio damos la mayor penalización
+                        float r = 0;
+                        if (nextPos.Walkable)
+                        {
+                            float distActual = AgentPosition.Distance(OtherPosition, CellInfo.DistanceType.Manhattan);
+                            float distNew = nextPos.Distance(path[0], CellInfo.DistanceType.Manhattan);
+
+                            if (distNew > distActual)
+                            {
+                                // Si el agente se ha alejado del enemigo
+                                r = 1;
+                            }
+                            else if (distNew < distActual)
+                            {
+                                // Si se ha acercado al enemigo
+                                r = -10;
+                            }
+                            else
+                            {
+                                // Si se ha mantenido
+                                r = 0;
+                            }
+
+                            tablaq.listValues[indice][bestDirection] = (1 - parametros.alpha) * (tablaq.listValues[indice][bestDirection]) + parametros.alpha * (r + parametros.gamma * (tablaq.listValues[nextindice].Max()));
+                        }
+                        else if (!nextPos.Walkable || (nextPos.x == path[0].x && nextPos.y == path[0].y)) //|| nextPos == path[0]
+                        {
+                            episodeWorking = false;
+                            OnEpisodeFinished?.Invoke(this, EventArgs.Empty);
+                            // Si el estado al que ha caminado es eliminatorio
+                            r = -100;
+                            tablaq.listValues[indice][bestDirection] = (1 - parametros.alpha) * (tablaq.listValues[indice][bestDirection]) + parametros.alpha * (r + parametros.gamma * (tablaq.listValues[nextindice].Max()));                        // Acabar episodio
+
+                        }
                     }
                                
 
@@ -147,8 +149,65 @@ namespace QMind
                 // Si es mayor de 0.85 se escoge una direccion aleatoria
                 else
                 {
-                    int direccion = UnityEngine.Random.Range(0, 4);
+                    int direccionRandom = UnityEngine.Random.Range(0, 4);
+                    switch (direccionRandom)
+                    {
+                        case 0:
+                            nextPos = worldInfo.NextCell(AgentPosition, Directions.Up);
+                            break;
+                        case 1:
+                            nextPos = worldInfo.NextCell(AgentPosition, Directions.Right);
+                            break;
+                        case 2:
+                            nextPos = worldInfo.NextCell(AgentPosition, Directions.Down);
+                            break;
+                        case 3:
+                            nextPos = worldInfo.NextCell(AgentPosition, Directions.Left);
+                            break;
+                    }
 
+                    if (path == null) {
+                        // FORMULA
+                        State nextState = getStateParam(nextPos, path[0]);
+                        int nextindice = tablaq.buscaIndiceEstado(nextState);
+
+                        // Calular recompensa
+
+                        // Si el siguiente estado es eliminatorio damos la mayor penalización
+                        float r = 0;
+                        if (nextPos.Walkable)
+                        {
+                            float distActual = AgentPosition.Distance(OtherPosition, CellInfo.DistanceType.Manhattan);
+                            float distNew = nextPos.Distance(path[0], CellInfo.DistanceType.Manhattan);
+
+                            if (distNew > distActual)
+                            {
+                                // Si el agente se ha alejado del enemigo
+                                r = 1;
+                            }
+                            else if (distNew < distActual)
+                            {
+                                // Si se ha acercado al enemigo
+                                r = -10;
+                            }
+                            else
+                            {
+                                // Si se ha mantenido
+                                r = 0;
+                            }
+
+                            tablaq.listValues[indice][direccionRandom] = (1 - parametros.alpha) * (tablaq.listValues[indice][direccionRandom]) + parametros.alpha * (r + parametros.gamma * (tablaq.listValues[nextindice].Max()));
+                        }
+                        else if (!nextPos.Walkable || (nextPos.x == path[0].x && nextPos.y == path[0].y)) //|| nextPos == path[0]
+                        {
+                            episodeWorking = false;
+                            OnEpisodeFinished?.Invoke(this, EventArgs.Empty);
+                            // Si el estado al que ha caminado es eliminatorio
+                            r = -100;
+                            tablaq.listValues[indice][direccionRandom] = (1 - parametros.alpha) * (tablaq.listValues[indice][direccionRandom]) + parametros.alpha * (r + parametros.gamma * (tablaq.listValues[nextindice].Max()));                        // Acabar episodio
+
+                        }
+                    }
                 }
 
 

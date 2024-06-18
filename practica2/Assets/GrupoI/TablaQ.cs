@@ -1,16 +1,28 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Unity.VisualScripting.FullSerializer;
 using UnityEngine;
+using static UnityEngine.Rendering.DebugUI;
 
 public class TablaQ
 {
     public int hayMuro = 2;  // 2 posibles casos
     public int numFranjasDist = 4;  // 4 posibles franjas de distancia
     public int numCuadrantes = 4;   // 4 u 8 posibles cuadrantes enemigo respecto al agente
-    
+    //public string ruta = Application.dataPath + "/GrupoI/";
+    public string ruta = "Qtable.csv";
+
+    // Constructor
+
+    // Metodos de gestion
+
+    // Otros metodos que querais
+
+    // Escritura lectura
+
 
     // Lista de estados
     public List<State> listStates;
@@ -29,11 +41,12 @@ public class TablaQ
     // por ej si el personaje esta en <5,5> y el enemigo esta en <10,10>
     // se consideraría que el enemigo esta en el cuadrante 0 
     //  1 | 0
-    // -------  (por si olvidaste dibujo tecnico ;) )
+    // ---+---  (por si olvidaste dibujo tecnico ;) )
     //  2 | 3
     // ejemplo: [left, up, right, down, distance, direction ], [ ... ]
-
-    public TablaQ() {   // Constructor
+    
+    // Constructor
+    public TablaQ() {   
         listStates = new List<State>();
         listValues = new List<float[]>();
         //stateIndexMap = new Dictionary<int, int>();
@@ -63,6 +76,7 @@ public class TablaQ
             }
         }
 
+        guardarCSV();
         //int[] estadoBuscar = { 0,0,0,0,0,4 };
         //buscaIndiceEstado(estadoBuscar);
 
@@ -78,5 +92,61 @@ public class TablaQ
         // 0 = up, 1 = right, 2 = down, 3 = left
         return bestIndex;
     }
+    /// Lee csv ya existente
+    //public List<List<float>> cargarCSV()
+    //{
+    //    List<List<float>> result = new List<List<float>>();
+    //    //Carga la tabla desde un archivo .csv.
+    //    try
+    //    {
+    //        using (StreamReader reader = new StreamReader(ruta))
+    //        {
+    //            while (!reader.EndOfStream)
+    //            {
+    //                // Read current line from the file
+    //                string line = reader.ReadLine();
 
+    //                // Split the line using semicolon as the separator
+    //                string[] fields = line.Split(';');
+
+    //                // Convert string array to List<float>
+    //                List<float> row = new List<float>();
+
+    //                foreach (string field in fields)
+    //                {
+    //                    if (float.TryParse(field, out float value))
+    //                    {
+    //                        row.Add(value);
+    //                    }
+    //                    else
+    //                    {
+    //                        // Handle the case where conversion to float fails
+    //                        Console.WriteLine($"Warning: Unable to parse '{field}' as float.");
+    //                    }
+    //                }
+
+    //                // Add the row to the result
+    //                result.Add(row);
+    //            }
+    //        }
+    //    }
+    //}
+    /// Guardar archivo
+    public void guardarCSV()
+    {
+        // Crear un StreamWriter para escribir en el archivo CSV
+        using (StreamWriter writer = new StreamWriter(ruta, false))
+        {
+            // Escribir cada fila de datos en el archivo CSV
+            foreach (float[] fila in listValues)
+            {
+                writer.WriteLine(string.Join(";", fila));
+                //foreach (float value in fila) { 
+                //    // Convertir cada valor float a string y escribirlos en el archivo, separados por comas
+                //    writer.Write(value + ";"); // value + ";"
+                //}
+                //writer.WriteLine("");
+            }
+        }
+    }
 }

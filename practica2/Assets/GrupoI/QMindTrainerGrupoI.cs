@@ -20,7 +20,7 @@ namespace QMind
         public event EventHandler OnEpisodeFinished;
 
         QMindTrainerParams parametros;
-
+        INavigationAlgorithm nav;
         public GameObject scenery;
 
         TablaQ tablaq;
@@ -34,7 +34,8 @@ namespace QMind
             AgentPosition = worldInfo.RandomCell();
             OtherPosition = worldInfo.RandomCell();
             parametros = qMindTrainerParams;
-            //this.worldInfo = worldInfo;
+            nav = navigationAlgorithm;
+            this.worldInfo = worldInfo;
             OnEpisodeStarted?.Invoke(this, EventArgs.Empty);
         }
 
@@ -124,16 +125,10 @@ namespace QMind
                 // Asignar la dirección al personaje
             }
             // Si es mayor de 0.85 se escoge una direccion aleatoria
-            else { 
-                
-
+            else {
+                int direccion = UnityEngine.Random.Range(0, 3);
             }
-
-
-            int direccion = UnityEngine.Random.Range(0, 3);
-
-
-
+            
             Debug.Log("Indice del estado x: " + indice);
         }
     }

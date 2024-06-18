@@ -2,6 +2,7 @@
 using NavigationDJIA.World;
 using QMind.Interfaces;
 using System;
+using System.Linq;
 using Unity.VisualScripting;
 using UnityEngine;
 
@@ -18,6 +19,8 @@ namespace QMind
         public event EventHandler OnEpisodeStarted;
         public event EventHandler OnEpisodeFinished;
 
+        QMindTrainerParams parametros;
+
         public GameObject scenery;
 
         TablaQ tablaq;
@@ -30,6 +33,7 @@ namespace QMind
             Debug.Log("QMindTrainerDummy: initialized");
             AgentPosition = worldInfo.RandomCell();
             OtherPosition = worldInfo.RandomCell();
+            parametros = qMindTrainerParams;
             //this.worldInfo = worldInfo;
             OnEpisodeStarted?.Invoke(this, EventArgs.Empty);
         }
@@ -38,10 +42,10 @@ namespace QMind
         public void DoStep(bool train)
         {
             Debug.Log("QMindTrainerDummy: DoStep");
-
+            
             // Array de ints en el que se introducen los resultados (podría usarse tambien una clase state)
             //State playerState = new State(); // Estado del personaje
-          
+
             // Calcular el angulo en grados hacia el oponente
             float signedangle = Mathf.Atan2(OtherPosition.y - AgentPosition.y, 
                 OtherPosition.x - AgentPosition.x) * Mathf.Rad2Deg;
@@ -59,7 +63,7 @@ namespace QMind
             //// Calcular distancia del agente a su oponente
             // distancia_Manhattan=∣x2−x1∣+∣y2−y1∣
 
-            float dist = Math.Abs(OtherPosition.x - AgentPosition.x) + Math.Abs(OtherPosition.y - AgentPosition.y);
+            float dist = AgentPosition.Distance(OtherPosition, CellInfo.DistanceType.Manhattan);
 
             int cercano = (int)Math.Floor(dist / 10);
 
@@ -67,9 +71,9 @@ namespace QMind
 
             // Devuelve si arriba hay muro
             CellInfo up = worldInfo.NextCell(AgentPosition, Directions.Up);
-            CellInfo right = worldInfo.NextCell(AgentPosition, Directions.Up);
-            CellInfo down = worldInfo.NextCell(AgentPosition, Directions.Up);
-            CellInfo left = worldInfo.NextCell(AgentPosition, Directions.Up);
+            CellInfo right = worldInfo.NextCell(AgentPosition, Directions.Right);
+            CellInfo down = worldInfo.NextCell(AgentPosition, Directions.Down);
+            CellInfo left = worldInfo.NextCell(AgentPosition, Directions.Left);
 
             int upw;
             int rightw;
@@ -105,9 +109,31 @@ namespace QMind
 
             // Escribir todos los datos en el estado actual del personaje
             State playerState = new State(upw, rightw, downw, leftw, cercano, cuadrante);
+            // Buscar a que indice de la lista de estados corresponde el estado actual del personaje
+            int indice = tablaq.buscaIndiceEstado(playerState);
 
-            
-            int indice = tablaq.buscaIndiceEstado(new State(1,0,0,0,0,3));
+            // Random para decidir si hará caso a la tabla o no
+            float randomNumber = UnityEngine.Random.Range(0f, 1f);
+
+            // Si es menor de 0.85 se hace caso a la tabla
+            if (randomNumber < parametros.epsilon)
+            {
+                // Buscar la mejor dirección posible en base a la lista de valores de un indice de estado
+                int bestDirection = tablaq.buscaMejorDireccion(indice);
+
+                // Asignar la dirección al personaje
+            }
+            // Si es mayor de 0.85 se escoge una direccion aleatoria
+            else { 
+                
+
+            }
+
+
+            int direccion = UnityEngine.Random.Range(0, 3);
+
+
+
             Debug.Log("Indice del estado x: " + indice);
         }
     }

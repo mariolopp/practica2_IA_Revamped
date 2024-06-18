@@ -11,8 +11,8 @@ namespace QMind
 {
     public class QMindTrainerGrupoI : IQMindTrainer
     {
-        public int CurrentEpisode { get; }
-        public int CurrentStep { get; }
+        public int CurrentEpisode { get; private set; }
+        public int CurrentStep { get; private set; }
         public CellInfo AgentPosition { get; private set; }
         public CellInfo OtherPosition { get; private set; }
         public float Return { get; }
@@ -31,34 +31,36 @@ namespace QMind
         
         public void Initialize(QMindTrainerParams qMindTrainerParams, WorldInfo worldInfo, INavigationAlgorithm navigationAlgorithm)
         {
-            tablaq = new TablaQ();
             Debug.Log("QMindTrainerDummy: initialized");
-            AgentPosition = worldInfo.RandomCell();
-            OtherPosition = worldInfo.RandomCell();
-            parametros = qMindTrainerParams;
-            nav = navigationAlgorithm;
-            nav.Initialize(worldInfo);
+            parametros = qMindTrainerParams; 
             this.worldInfo = worldInfo;
-            episodeWorking = false;
-            
+            nav = navigationAlgorithm;
+            nav.Initialize(worldInfo);     
+            tablaq = new TablaQ();            
+            AgentPosition = worldInfo.RandomCell();
+            OtherPosition = worldInfo.RandomCell();           
+            episodeWorking = false;            
         }
-
 
         public void DoStep(bool train)
         {
+
             Debug.Log("QMindTrainerDummy: DoStep");
             if (!episodeWorking)
-            {
-                episodeWorking = true;
+            {                
                 AgentPosition = worldInfo.RandomCell();
                 OtherPosition = worldInfo.RandomCell();
+                CurrentEpisode++;
+                tablaq.guardarCSV();
+                CurrentStep = 0;
+                episodeWorking = true;
                 OnEpisodeStarted?.Invoke(this, EventArgs.Empty);
             }
             else
             {
                 // Array de ints en el que se introducen los resultados (podría usarse tambien una clase state)
                 //State playerState = new State(); // Estado del personaje
-
+                
 
                 State playerState = getState();
 
@@ -71,13 +73,17 @@ namespace QMind
 
                 CellInfo[] path = nav.GetPath(OtherPosition, AgentPosition, 20);
                 // Si es menor de 0.85 se hace caso a la tabla
+
+
+                // Crear como sería la posición de la mejor direccion
+                CellInfo nextPos = new CellInfo(0, 0);
+
                 if (randomNumber < parametros.epsilon)
                 {
                     // Buscar la mejor dirección posible en base a la lista de valores de un indice de estado
                     int bestDirection = tablaq.buscaMejorDireccion(indice);
 
-                    // Crear como sería la posición de la mejor direccion
-                    CellInfo nextPos = new CellInfo(0, 0);
+                    
                     switch (bestDirection)
                     {
                         case 0:
@@ -105,27 +111,37 @@ namespace QMind
                     float r = 0;
                     if (nextPos.Walkable)
                     {
-                        // Si el agente se ha alejado del enemigo
+                        float distActual = AgentPosition.Distance(OtherPosition, CellInfo.DistanceType.Manhattan);
+                        float distNew = nextPos.Distance(path[0], CellInfo.DistanceType.Manhattan);
+                        
+                        if ( distNew > distActual)
+                        {
+                            // Si el agente se ha alejado del enemigo
+                            r = 1;
+                        }
+                        else if (distNew < distActual)
+                        {
+                            // Si se ha acercado al enemigo
+                            r = -10;
+                        }
+                        else
+                        {
+                            // Si se ha mantenido
+                            r = 0;
+                        }
+
                         tablaq.listValues[indice][bestDirection] = (1 - parametros.alpha) * (tablaq.listValues[indice][bestDirection]) + parametros.alpha * (r + parametros.gamma * (tablaq.listValues[nextindice].Max()));
                     }
-                    else
+                    else if (!nextPos.Walkable) //|| nextPos == path[0]
                     {
-                        // Si el estado al que ha caminado es eliminatorio
-                        r = -100;
-                        tablaq.listValues[indice][bestDirection] = (1 - parametros.alpha) * (tablaq.listValues[indice][bestDirection]) + parametros.alpha * (r + parametros.gamma * (tablaq.listValues[nextindice].Max()));
-                        // Acabar episodio
                         episodeWorking = false;
                         OnEpisodeFinished?.Invoke(this, EventArgs.Empty);
+                        // Si el estado al que ha caminado es eliminatorio
+                        r = -100;
+                        tablaq.listValues[indice][bestDirection] = (1 - parametros.alpha) * (tablaq.listValues[indice][bestDirection]) + parametros.alpha * (r + parametros.gamma * (tablaq.listValues[nextindice].Max()));                        // Acabar episodio
+                        
                     }
-                    // Si el siguiente estado es mal damos una pequeña penalización
-                    // Si el siguiente estado es positivo damos una pequeña recompensa
-
-
-
-
-                    // Si decide algo eliminatorio penalizar tablaQ y finalizar al juego
-
-                    // Asignar la dirección al personaje
+                               
 
                 }
                 // Si es mayor de 0.85 se escoge una direccion aleatoria
@@ -139,8 +155,9 @@ namespace QMind
                 // actualizar 
                 Debug.Log("Indice del estado x: " + indice);
 
-
+                AgentPosition = nextPos;
                 OtherPosition = path[0];
+                CurrentStep++;
             }
         }
         
@@ -148,8 +165,7 @@ namespace QMind
         public State getState()
         {
             // Calcular el angulo en grados hacia el oponente
-            float signedangle = Mathf.Atan2(OtherPosition.y - AgentPosition.y,
-                OtherPosition.x - AgentPosition.x) * Mathf.Rad2Deg;
+            float signedangle = Mathf.Atan2(OtherPosition.y - AgentPosition.y, OtherPosition.x - AgentPosition.x) * Mathf.Rad2Deg;
 
             // Calcular el cuadrante del oponente en base al angulo
             signedangle = (signedangle + 360) % 360;
@@ -225,6 +241,8 @@ namespace QMind
 
             return playerState;
         }
+
+        
         private State getStateParam(CellInfo agent, CellInfo other)
         {
             // Calcular el angulo en grados hacia el oponente

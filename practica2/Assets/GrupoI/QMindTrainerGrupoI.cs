@@ -20,6 +20,7 @@ namespace QMind
         public bool episodeWorking;
         public event EventHandler OnEpisodeStarted;
         public event EventHandler OnEpisodeFinished;
+        public float coefEpsilon;
 
         QMindTrainerParams parametros;
         INavigationAlgorithm nav;
@@ -33,10 +34,12 @@ namespace QMind
         {
             Debug.Log("QMindTrainerDummy: initialized");
             parametros = qMindTrainerParams; 
+            parametros.epsilon = 1.0f;
             this.worldInfo = worldInfo;
             nav = navigationAlgorithm;
             nav.Initialize(worldInfo);     
             tablaq = new TablaQ();            
+            coefEpsilon = 0.0f;
             //AgentPosition = worldInfo.RandomCell();
             //OtherPosition = worldInfo.RandomCell();           
             episodeWorking = false;            
@@ -52,6 +55,15 @@ namespace QMind
                 OtherPosition = worldInfo.RandomCell();
                 CurrentEpisode++;
                 //tablaq.guardarCSV("Qtable.csv");
+                if (CurrentEpisode % parametros.episodesBetweenSaves == 0)
+                {
+                    Debug.Log("Guardando tabla");
+                    tablaq.guardarCSV("Qtable.csv");
+                    coefEpsilon = (CurrentEpisode / (float)parametros.episodes)*3.0f;
+                    parametros.epsilon = Mathf.Exp(-coefEpsilon);
+                    /*.epsilon = Math.Max(0, parametros.epsilon);*/
+                    Debug.Log(parametros.epsilon);
+                }
                 CurrentStep = 0;
                 episodeWorking = true;
                 OnEpisodeStarted?.Invoke(this, EventArgs.Empty);
@@ -79,7 +91,7 @@ namespace QMind
                 CellInfo nextPos = new CellInfo(0, 0);
 
                 bool puede = true;
-                if (randomNumber < parametros.epsilon)
+                if (randomNumber >= parametros.epsilon)
                 {
                     // Buscar la mejor dirección posible en base a la lista de valores de un indice de estado
                     int bestDirection = tablaq.buscaMejorDireccion(indice);
@@ -139,16 +151,16 @@ namespace QMind
                         }
                         else if (!nextPos.Walkable || (nextPos.x == path[0].x && nextPos.y == path[0].y)) //|| nextPos == path[0]
                         {
-                            episodeWorking = false;
-                            OnEpisodeFinished?.Invoke(this, EventArgs.Empty);
                             // Si el estado al que ha caminado es eliminatorio
                             r = -100;
                             tablaq.listValues[indice][bestDirection] = (1 - parametros.alpha) * (tablaq.listValues[indice][bestDirection]) + parametros.alpha * (r + parametros.gamma * (tablaq.listValues[nextindice].Max()));                        // Acabar episodio
-
+                            
+                            episodeWorking = false;
+                            OnEpisodeFinished?.Invoke(this, EventArgs.Empty);
                         }
                     }
                     else {
-                        Debug.Log("El if no se ha cumplido");
+                        //Debug.Log("El if no se ha cumplido");
                         puede = false;
                     }
                                
@@ -222,7 +234,7 @@ namespace QMind
 
                         }
                     }else {
-                        Debug.Log("El if no se ha cumplido");
+                        //Debug.Log("El if no se ha cumplido");
                         puede = false;
                     }
                 }
@@ -236,12 +248,12 @@ namespace QMind
                     OtherPosition = path[0];
                     CurrentStep++;
                 }
+
+                // Se ejecuta si el zombie ha sido atrapado o si path era null
                 else {
+                    
                     OnEpisodeFinished?.Invoke(this, EventArgs.Empty);
                     episodeWorking = false;
-                    if (CurrentEpisode % parametros.episodesBetweenSaves==0) {
-                        tablaq.guardarCSV("Qtable.csv");
-                    }
                 }
             }
         }

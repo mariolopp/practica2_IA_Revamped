@@ -76,7 +76,12 @@ public class TablaQ
             }
         }
 
-        guardarCSV();
+        // Si descomentas aquí te va a guardar una tabla todo a 0 (que son los valores que tiene listValues por el for)
+        guardarCSV(ruta);   
+
+        cargarCSV();
+        guardarCSV("Qbackup.csv");
+
         //int[] estadoBuscar = { 0,0,0,0,0,4 };
         //buscaIndiceEstado(estadoBuscar);
 
@@ -92,47 +97,53 @@ public class TablaQ
         // 0 = up, 1 = right, 2 = down, 3 = left
         return bestIndex;
     }
-    /// Lee csv ya existente
-    //public List<List<float>> cargarCSV()
-    //{
-    //    List<List<float>> result = new List<List<float>>();
-    //    //Carga la tabla desde un archivo .csv.
-    //    try
-    //    {
-    //        using (StreamReader reader = new StreamReader(ruta))
-    //        {
-    //            while (!reader.EndOfStream)
-    //            {
-    //                // Read current line from the file
-    //                string line = reader.ReadLine();
+public void cargarCSV()
+    {
+        //Carga la tabla desde un archivo .csv.
+        try
+        {
+            using (StreamReader reader = new StreamReader(ruta))
+            {
+                int i = 0;
+                while (!reader.EndOfStream)
+                {
+                    // Read current line from the file
+                    string line = reader.ReadLine();
 
-    //                // Split the line using semicolon as the separator
-    //                string[] fields = line.Split(';');
+                    // Split the line using semicolon as the separator
+                    string[] fields = line.Split(';');
 
-    //                // Convert string array to List<float>
-    //                List<float> row = new List<float>();
+                    // Convert string array to List<float>
+                    List<float> row = new List<float>();
 
-    //                foreach (string field in fields)
-    //                {
-    //                    if (float.TryParse(field, out float value))
-    //                    {
-    //                        row.Add(value);
-    //                    }
-    //                    else
-    //                    {
-    //                        // Handle the case where conversion to float fails
-    //                        Console.WriteLine($"Warning: Unable to parse '{field}' as float.");
-    //                    }
-    //                }
+                    foreach (string field in fields)
+                    {
+                        if (float.TryParse(field, out float value))
+                        {
+                            row.Add(value);
+                        }
+                        else
+                        {
+                            // Handle the case where conversion to float fails
+                            Console.WriteLine($"Warning: Unable to parse '{field}' as float.");
+                        }
+                    }
 
-    //                // Add the row to the result
-    //                result.Add(row);
-    //            }
-    //        }
-    //    }
-    //}
+                    for (int j = 0;  j < 4; j++)
+                    {
+                        listValues[i][j] = row[j];
+                    }
+                    i++;
+                }
+            }
+        }
+        catch(Exception ex)
+        {
+            Console.WriteLine(ex.ToString());
+        }
+    }
     /// Guardar archivo
-    public void guardarCSV()
+    public void guardarCSV(string ruta)
     {
         // Crear un StreamWriter para escribir en el archivo CSV
         using (StreamWriter writer = new StreamWriter(ruta, false))

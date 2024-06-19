@@ -51,7 +51,7 @@ namespace QMind
                 AgentPosition = worldInfo.RandomCell();
                 OtherPosition = worldInfo.RandomCell();
                 CurrentEpisode++;
-                tablaq.guardarCSV();
+                tablaq.guardarCSV("Qtable.csv");
                 CurrentStep = 0;
                 episodeWorking = true;
                 OnEpisodeStarted?.Invoke(this, EventArgs.Empty);

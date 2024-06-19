@@ -51,7 +51,7 @@ namespace QMind
                 AgentPosition = worldInfo.RandomCell();
                 OtherPosition = worldInfo.RandomCell();
                 CurrentEpisode++;
-                tablaq.guardarCSV("Qtable.csv");
+                //tablaq.guardarCSV("Qtable.csv");
                 CurrentStep = 0;
                 episodeWorking = true;
                 OnEpisodeStarted?.Invoke(this, EventArgs.Empty);
@@ -239,6 +239,9 @@ namespace QMind
                 else {
                     OnEpisodeFinished?.Invoke(this, EventArgs.Empty);
                     episodeWorking = false;
+                    if (CurrentEpisode % parametros.episodesBetweenSaves==0) {
+                        tablaq.guardarCSV("Qtable.csv");
+                    }
                 }
             }
         }

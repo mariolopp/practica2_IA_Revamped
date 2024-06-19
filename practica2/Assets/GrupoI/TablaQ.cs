@@ -77,10 +77,10 @@ public class TablaQ
         }
 
         // Si descomentas aquí te va a guardar una tabla todo a 0 (que son los valores que tiene listValues por el for)
-        guardarCSV(ruta);   
+        //guardarCSV(ruta);   
 
         cargarCSV();
-        guardarCSV("Qbackup.csv");
+        //guardarCSV("Qbackup.csv");
 
         //int[] estadoBuscar = { 0,0,0,0,0,4 };
         //buscaIndiceEstado(estadoBuscar);

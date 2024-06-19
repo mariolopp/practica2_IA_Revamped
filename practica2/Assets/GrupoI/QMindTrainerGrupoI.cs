@@ -45,7 +45,7 @@ namespace QMind
         public void DoStep(bool train)
         {
 
-            Debug.Log("QMindTrainerDummy: DoStep");
+            //Debug.Log("QMindTrainerDummy: DoStep");
             if (!episodeWorking)
             {                
                 AgentPosition = worldInfo.RandomCell();
@@ -78,11 +78,11 @@ namespace QMind
                 // Crear como sería la posición de la mejor direccion
                 CellInfo nextPos = new CellInfo(0, 0);
 
+                bool puede = true;
                 if (randomNumber < parametros.epsilon)
                 {
                     // Buscar la mejor dirección posible en base a la lista de valores de un indice de estado
                     int bestDirection = tablaq.buscaMejorDireccion(indice);
-
                     
                     switch (bestDirection)
                     {
@@ -100,7 +100,7 @@ namespace QMind
                             break;
                     }
 
-                    if (path == null)
+                    if (path != null && path.Length > 0)
                     {
                         // FORMULA
                         State nextState = getStateParam(nextPos, path[0]);
@@ -125,6 +125,10 @@ namespace QMind
                                 // Si se ha acercado al enemigo
                                 r = -10;
                             }
+                            else if (distNew==0) { // Si la nueva acción provocaría que colisionaran...
+                                r = -100;
+                                puede = false;
+                            }
                             else
                             {
                                 // Si se ha mantenido
@@ -142,6 +146,10 @@ namespace QMind
                             tablaq.listValues[indice][bestDirection] = (1 - parametros.alpha) * (tablaq.listValues[indice][bestDirection]) + parametros.alpha * (r + parametros.gamma * (tablaq.listValues[nextindice].Max()));                        // Acabar episodio
 
                         }
+                    }
+                    else {
+                        Debug.Log("El if no se ha cumplido");
+                        puede = false;
                     }
                                
 
@@ -166,7 +174,7 @@ namespace QMind
                             break;
                     }
 
-                    if (path == null) {
+                    if (path != null && path.Length > 0) {
                         // FORMULA
                         State nextState = getStateParam(nextPos, path[0]);
                         int nextindice = tablaq.buscaIndiceEstado(nextState);
@@ -190,6 +198,11 @@ namespace QMind
                                 // Si se ha acercado al enemigo
                                 r = -10;
                             }
+                            else if (distNew == 0)
+                            { // Si la nueva acción provocaría que colisionaran...
+                                r = -100;
+                                puede = false;
+                            }
                             else
                             {
                                 // Si se ha mantenido
@@ -200,6 +213,7 @@ namespace QMind
                         }
                         else if (!nextPos.Walkable || (nextPos.x == path[0].x && nextPos.y == path[0].y)) //|| nextPos == path[0]
                         {
+                            
                             episodeWorking = false;
                             OnEpisodeFinished?.Invoke(this, EventArgs.Empty);
                             // Si el estado al que ha caminado es eliminatorio
@@ -207,16 +221,25 @@ namespace QMind
                             tablaq.listValues[indice][direccionRandom] = (1 - parametros.alpha) * (tablaq.listValues[indice][direccionRandom]) + parametros.alpha * (r + parametros.gamma * (tablaq.listValues[nextindice].Max()));                        // Acabar episodio
 
                         }
+                    }else {
+                        Debug.Log("El if no se ha cumplido");
+                        puede = false;
                     }
                 }
 
 
                 // actualizar 
-                Debug.Log("Indice del estado x: " + indice);
-
-                AgentPosition = nextPos;
-                OtherPosition = path[0];
-                CurrentStep++;
+                //Debug.Log("Indice del estado x: " + indice);
+                if (puede)
+                {
+                    AgentPosition = nextPos;
+                    OtherPosition = path[0];
+                    CurrentStep++;
+                }
+                else {
+                    OnEpisodeFinished?.Invoke(this, EventArgs.Empty);
+                    episodeWorking = false;
+                }
             }
         }
         
@@ -228,10 +251,10 @@ namespace QMind
 
             // Calcular el cuadrante del oponente en base al angulo
             signedangle = (signedangle + 360) % 360;
-            Debug.Log("Angulo enemigo signed: " + signedangle);
+            //Debug.Log("Angulo enemigo signed: " + signedangle);
 
             int cuadrante = (int)(signedangle / 90);
-            Debug.Log("Cuadrante obtenido: " + cuadrante);
+            //Debug.Log("Cuadrante obtenido: " + cuadrante);
 
             // Escribir el cuadrante en el estado
             //playerState.cuadrante = cuadrante;
@@ -243,7 +266,7 @@ namespace QMind
 
             int cercano = (int)Math.Floor(dist / 10);
 
-            Debug.Log("Cercania es: " + cercano);
+            //Debug.Log("Cercania es: " + cercano);
 
             // Se utilizarán mas adelante para saber si hay muro con walkable
             CellInfo up = worldInfo.NextCell(AgentPosition, Directions.Up);
@@ -310,10 +333,10 @@ namespace QMind
 
             // Calcular el cuadrante del oponente en base al angulo
             signedangle = (signedangle + 360) % 360;
-            Debug.Log("Angulo enemigo signed: " + signedangle);
+            //Debug.Log("Angulo enemigo signed: " + signedangle);
 
             int cuadrante = (int)(signedangle / 90);
-            Debug.Log("Cuadrante obtenido: " + cuadrante);
+            //Debug.Log("Cuadrante obtenido: " + cuadrante);
 
             // Escribir el cuadrante en el estado
             //playerState.cuadrante = cuadrante;
@@ -325,7 +348,7 @@ namespace QMind
 
             int cercano = (int)Math.Floor(dist / 10);
 
-            Debug.Log("Cercania es: " + cercano);
+            //Debug.Log("Cercania es: " + cercano);
 
             // Devuelve si arriba hay muro
             CellInfo up = worldInfo.NextCell(agent, Directions.Up);

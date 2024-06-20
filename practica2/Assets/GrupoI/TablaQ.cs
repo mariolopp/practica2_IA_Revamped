@@ -9,48 +9,42 @@ using static UnityEngine.Rendering.DebugUI;
 
 public class TablaQ
 {
+    //---------- INFORMACIÓN ------------------
+        // [0|1, 0|1, 0|1, 0|1, 0|1|2|3, 0|1|2|3 ] → array de la lista de State
+        // [up, right, down, left] → Uno por cada indice de la lista de 'State'
+        // Indican los valores de la tablaq que el personaje puede tener en cuenta al moverse
+
+        // Lista de objetos State, cada uno indica:
+        // Si el personaje tiene muros a su alrededor up, left, right, down
+        // si el enemigo esta a distancia baja, media o alta (cercania)
+        // y el cuadrante en el que se situa el enemigo en base
+        // a la posicion del personaje (cuadrante)
+        // por ej si el personaje esta en <5,5> y el enemigo esta en <10,10>
+        // se consideraría que el enemigo esta en el cuadrante 0 
+        //  1 | 0
+        // ---+---  (por si olvidaste dibujo tecnico ;) )
+        //  2 | 3
+        // ejemplo: [left, up, right, down, distance, direction ], [ ... ]
+    //------------------------------------------
+    
+    #region Variables
+
     public int hayMuro = 2;  // 2 posibles casos
     public int numFranjasDist = 4;  // 4 posibles franjas de distancia
     public int numCuadrantes = 4;   // 4 u 8 posibles cuadrantes enemigo respecto al agente
-    //public string ruta = Application.dataPath + "/GrupoI/";
-    public string ruta = "Qtable.csv";
+    public string ruta = "Qtable.csv";    //Ruta archivo CSV
+    public List<State> listStates;  // Lista de estados   
+    public List<float[]> listValues;    // valores Q de las acciones de cada estado
 
-    // Constructor
+    #endregion
 
-    // Metodos de gestion
-
-    // Otros metodos que querais
-
-    // Escritura lectura
-
-
-    // Lista de estados
-    public List<State> listStates;
-    // Lista de valorea para cada indice de estado
-    public List<float[]> listValues;
-
-    // [0|1, 0|1, 0|1, 0|1, 0|1|2|3, 0|1|2|3 ] → array de la lista de State
-    // [up, right, down, left] → Uno por cada indice de la lista de 'State'
-    // Indican los valores de la tablaq que el personaje puede tener en cuenta al moverse
-    
-    // Lista de objetos State, cada uno indica:
-    // Si el personaje tiene muros a su alrededor up, left, right, down
-    // si el enemigo esta a distancia baja, media o alta (cercania)
-    // y el cuadrante en el que se situa el enemigo en base
-    // a la posicion del personaje (cuadrante)
-    // por ej si el personaje esta en <5,5> y el enemigo esta en <10,10>
-    // se consideraría que el enemigo esta en el cuadrante 0 
-    //  1 | 0
-    // ---+---  (por si olvidaste dibujo tecnico ;) )
-    //  2 | 3
-    // ejemplo: [left, up, right, down, distance, direction ], [ ... ]
-    
-    // Constructor
+    #region Constructor
     public TablaQ() {   
         listStates = new List<State>();
         listValues = new List<float[]>();
-        //stateIndexMap = new Dictionary<int, int>();
-        // Montaña de for que inicializan los estados (codigo espaguetti pero funciona)
+
+        //INICIALIZACIÓN ESTADOS
+
         for (int i0 = 0; i0 < hayMuro; i0++)
         {
             for (int i1 = 0; i1 < hayMuro; i1++)
@@ -64,11 +58,10 @@ public class TablaQ
                             for (int i5 = 0; i5 < numCuadrantes; i5++)
                             {
                                 State addS = new State(i0, i1, i2, i3, i4, i5);
-                                listStates.Add(addS);
-                                // Añadir datos inicializados a 0 a la tabla (si se quiere mejorar los datos ya disponibles en la tabla, habría que cambiarlo)
-                                listValues.Add(new float[] { 0f, 0f, 0f, 0f });   
-                                
-                                Debug.Log(addS.up +", "+ addS.right + ", " + addS.down + ", " + addS.left + ", " + addS.cercania + ", " + addS.cuadrante);
+                                listStates.Add(addS);                                
+                                listValues.Add(new float[] { 0f, 0f, 0f, 0f });   // Añadir datos inicializados a 0 a la tabla
+
+                                //Debug.Log(addS.up +", "+ addS.right + ", " + addS.down + ", " + addS.left + ", " + addS.cercania + ", " + addS.cuadrante);
                             }
                         }
                     }
@@ -76,16 +69,18 @@ public class TablaQ
             }
         }
 
+
+
         // Si descomentas aquí te va a guardar una tabla todo a 0 (que son los valores que tiene listValues por el for)
         //guardarCSV(ruta);   
 
         cargarCSV();
         //guardarCSV("Qbackup.csv");
-
-        //int[] estadoBuscar = { 0,0,0,0,0,4 };
-        //buscaIndiceEstado(estadoBuscar);
-
     }
+
+    #endregion
+
+    #region Métodos de busqueda
     public int buscaIndiceEstado(State state) {
         int index = listStates.IndexOf(state);
         return index;
@@ -97,23 +92,27 @@ public class TablaQ
         // 0 = up, 1 = right, 2 = down, 3 = left
         return bestIndex;
     }
-public void cargarCSV()
+
+    #endregion
+
+    #region Métodos de tratado de archivos
+
+    // SOBREESCRIBE LISTA DE VALORES Q A PARTIR DE UN ARCHIVO CSV
+    public void cargarCSV()
     {
-        //Carga la tabla desde un archivo .csv.
+       
         try
         {
             using (StreamReader reader = new StreamReader(ruta))
             {
-                int i = 0;
+                int i = 0;  // indice de la lista listValues (estado)
                 while (!reader.EndOfStream)
                 {
-                    // Read current line from the file
+                    // Toma cada fila de la tabla q, la separa por las acciones de cada estado y lo almacena en listValues
                     string line = reader.ReadLine();
 
-                    // Split the line using semicolon as the separator
                     string[] fields = line.Split(';');
 
-                    // Convert string array to List<float>
                     List<float> row = new List<float>();
 
                     foreach (string field in fields)
@@ -124,11 +123,11 @@ public void cargarCSV()
                         }
                         else
                         {
-                            // Handle the case where conversion to float fails
                             Console.WriteLine($"Warning: Unable to parse '{field}' as float.");
                         }
                     }
 
+                    // guardado valores de cada fila del csv en listValues
                     for (int j = 0;  j < 4; j++)
                     {
                         listValues[i][j] = row[j];
@@ -142,7 +141,9 @@ public void cargarCSV()
             Console.WriteLine(ex.ToString());
         }
     }
-    /// Guardar archivo
+
+
+    /// GUARDAR LISTA DE VALORES Q EN UN ARCHIVO CSV
     public void guardarCSV(string ruta)
     {
         // Crear un StreamWriter para escribir en el archivo CSV
@@ -160,4 +161,6 @@ public void cargarCSV()
             }
         }
     }
+
+    #endregion
 }

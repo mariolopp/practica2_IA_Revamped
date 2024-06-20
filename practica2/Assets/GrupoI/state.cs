@@ -2,21 +2,28 @@ using UnityEngine.ProBuilder.Shapes;
 
 public class State
 {
+    #region Variables
+    // Atributos de cada estado
     public int up;
     public int down;
     public int left;
     public int right;
     public int cercania;
     public int cuadrante;
-    public State() { // Constructor
+    #endregion
+
+    #region Constructores
+    public State() { 
         up = 0; down = 0; left = 0; right = 0; cercania = 0; cuadrante = 0;
     }
     public State(int u, int d, int l, int r, int closer, int cuad)
     { // Constructor
         up = u; down = d; left = l; right = r; cercania = closer; cuadrante = cuad;
     }
+    #endregion
 
-    // Comparar dos clases estado
+    #region Métodos
+    //Comparar objetos State
     public override bool Equals(object obj)
     {
         if (obj is State other)
@@ -30,4 +37,5 @@ public class State
         }
         return false;
     }
+    #endregion
 }

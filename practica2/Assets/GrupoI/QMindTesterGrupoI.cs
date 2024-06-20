@@ -9,13 +9,15 @@ namespace QMind
 {
     public class QMindTesterGrupoI : IQMind
     {
+        #region Variables
         WorldInfo worldInfo;
         TablaQ tablaq;
         CellInfo nextPos;
+        #endregion
 
         public void Initialize(WorldInfo worldInfo)
         {
-            Debug.Log("QMindDummy: initialized");
+            //Debug.Log("QMindDummy: initialized");
             this.worldInfo = worldInfo;
             tablaq = new TablaQ();   
             nextPos = new CellInfo(0,0);    
@@ -24,7 +26,7 @@ namespace QMind
         public CellInfo GetNextStep(CellInfo currentPosition, CellInfo otherPosition)
         {
             Debug.Log("QMindDummy: GetNextStep");
-            State currentState = getStateParam(currentPosition, otherPosition);
+            State currentState = getState(currentPosition, otherPosition);
             int indice = tablaq.buscaIndiceEstado(currentState);
             int bestDirection = tablaq.buscaMejorDireccion(indice);
 
@@ -45,31 +47,18 @@ namespace QMind
             }
             return nextPos;
         }
-    
-        private State getStateParam(CellInfo agent, CellInfo other)
+
+        private State getState(CellInfo agent, CellInfo other)
         {
-            // Calcular el angulo en grados hacia el oponente
-            float signedangle = Mathf.Atan2(other.y - agent.y,
-                other.x - agent.x) * Mathf.Rad2Deg;
 
-            // Calcular el cuadrante del oponente en base al angulo
-            signedangle = (signedangle + 360) % 360;
-            //Debug.Log("Angulo enemigo signed: " + signedangle);
-
+            float signedangle = Mathf.Atan2(other.y - agent.y, other.x - agent.x) * Mathf.Rad2Deg; // Calcular el angulo en grados hacia el oponente            
+            signedangle = (signedangle + 360) % 360;    // Calcular el cuadrante del oponente en base al angulo            
             int cuadrante = (int)(signedangle / 90);
-            //Debug.Log("Cuadrante obtenido: " + cuadrante);
-
-            // Escribir el cuadrante en el estado
-            //playerState.cuadrante = cuadrante;
 
             //// Calcular distancia del agente a su oponente
-            // distancia_Manhattan=∣x2−x1∣+∣y2−y1∣
-
+            // distancia_Manhattan=∣x2−x1∣+∣y2−y1
             float dist = agent.Distance(other, CellInfo.DistanceType.Manhattan);
-
             int cercano = (int)Math.Floor(dist / 10);
-
-            //Debug.Log("Cercania es: " + cercano);
 
             // Devuelve si arriba hay muro
             CellInfo up = worldInfo.NextCell(agent, Directions.Up);
@@ -82,8 +71,8 @@ namespace QMind
             int downw;
             int leftw;
 
-            // 1 si hay muro, 0 si no hay nada
-            #region ifs
+            #region comprobar si hay muros
+            //  1 si hay muro, 0 si no hay nada
             if (up.Walkable)
             {
                 upw = 0;

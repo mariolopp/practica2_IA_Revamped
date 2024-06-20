@@ -54,8 +54,8 @@ namespace QMind
             this.worldInfo = worldInfo;
             nav = navigationAlgorithm;
             nav.Initialize(worldInfo);     
-            tablaq = new TablaQ();   
-            
+            tablaq = new TablaQ();
+            parametros.epsilon = 1.0f;
             coefEpsilon = 0.0f;       
             episodeWorking = false;            
         }
@@ -104,14 +104,14 @@ namespace QMind
                     if (randomNumber >= parametros.epsilon)
                     {
                         int bestDirection = tablaq.buscaMejorDireccion(indice);
-                        nextPos = getNextPos(bestDirection, path, indice);
+                        nextPos = getNextPos(bestDirection, path, indice, playerState);
 
                     }
                     // Usa direccion aleatoria
                     else
                     {
                         int direccionRandom = UnityEngine.Random.Range(0, 4);
-                        nextPos = getNextPos(direccionRandom, path, indice);
+                        nextPos = getNextPos(direccionRandom, path, indice, playerState);
                     }
                     AgentPosition = nextPos;
                     OtherPosition = path[0];
@@ -197,7 +197,7 @@ namespace QMind
         #endregion
 
         #region Método para obtener siguiente posicion personaje
-        private CellInfo getNextPos(int direction, CellInfo[] auxPath, int index)
+        private CellInfo getNextPos(int direction, CellInfo[] auxPath, int index, State currentState)
         {
             CellInfo auxNextPos = new CellInfo(0,0);
 
@@ -233,9 +233,9 @@ namespace QMind
                 float distNewCross = auxNextPos.Distance(OtherPosition, CellInfo.DistanceType.Manhattan);
 
                 // Si el agente se ha alejado del enemigo
-                if (distNew > distActual)
+                if (currentState.cercania == 2 && nextState.cercania == 3)
                 {
-                    r = 1;
+                    r = 100;
                 }
                 // Si se ha acercado al enemigo
                 else if (distNew < distActual)

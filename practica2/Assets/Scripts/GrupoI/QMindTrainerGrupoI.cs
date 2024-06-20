@@ -73,7 +73,7 @@ namespace QMind
                 if (CurrentEpisode % parametros.episodesBetweenSaves == 0)
                 {
                     Debug.Log("Guardando tabla");
-                    tablaq.guardarCSV("Qtable.csv");
+                    tablaq.guardarCSV(tablaq.ruta);
                     coefEpsilon = (CurrentEpisode / (float)parametros.episodes)*3.0f;
                     parametros.epsilon = Mathf.Exp(-coefEpsilon);
                     Debug.Log(parametros.epsilon);
@@ -126,9 +126,9 @@ namespace QMind
         {
             
             float signedangle = Mathf.Atan2(other.y - agent.y, other.x - agent.x) * Mathf.Rad2Deg; // Calcular el angulo en grados hacia el oponente            
-            signedangle = (signedangle + 360) % 360;    // Calcular el cuadrante del oponente en base al angulo            
-            int cuadrante = (int)(signedangle / 90);    
-
+            signedangle = (signedangle + 360 - (tablaq.angCuadrantes / 2)) % 360 ;    // Calcular el cuadrante del oponente en base al angulo            
+            int cuadrante = (int)(signedangle / tablaq.angCuadrantes);
+            Debug.Log(cuadrante);
             //// Calcular distancia del agente a su oponente
             // distancia_Manhattan=∣x2−x1∣+∣y2−y1
             float dist = agent.Distance(other, CellInfo.DistanceType.Manhattan);

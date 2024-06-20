@@ -32,7 +32,8 @@ public class TablaQ
     public int hayMuro = 2;  // 2 posibles casos
     public int numFranjasDist = 4;  // 4 posibles franjas de distancia
     public int numCuadrantes = 4;   // 4 u 8 posibles cuadrantes enemigo respecto al agente
-    public string ruta = "Qtable.csv";    //Ruta archivo CSV
+    public int angCuadrantes = 90;
+    public string ruta = Application.dataPath + "/Scripts/GrupoI/" + "Qtable.csv";    //Ruta archivo CSV
     public List<State> listStates;  // Lista de estados   
     public List<float[]> listValues;    // valores Q de las acciones de cada estado
 

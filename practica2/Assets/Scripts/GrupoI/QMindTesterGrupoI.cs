@@ -20,7 +20,7 @@ namespace QMind
             //Debug.Log("QMindDummy: initialized");
             this.worldInfo = worldInfo;
             tablaq = new TablaQ();   
-            nextPos = new CellInfo(0,0);    
+            nextPos = new CellInfo(0,0);
         }
 
         public CellInfo GetNextStep(CellInfo currentPosition, CellInfo otherPosition)

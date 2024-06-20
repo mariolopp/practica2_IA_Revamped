@@ -225,6 +225,7 @@ namespace QMind
             {
                 float distActual = AgentPosition.Distance(OtherPosition, CellInfo.DistanceType.Manhattan);
                 float distNew = auxNextPos.Distance(auxPath[0], CellInfo.DistanceType.Manhattan);
+                float distNewCross = auxNextPos.Distance(OtherPosition, CellInfo.DistanceType.Manhattan);
 
                 // Si el agente se ha alejado del enemigo
                 if (distNew > distActual)
@@ -237,7 +238,7 @@ namespace QMind
                     r = -10;
                 }
                 // Si colisionan
-                else if (distNew == 0)
+                else if (distNew == 0 || distNewCross == 0)
                 {
                     r = -100;
                     episodeWorking = false;

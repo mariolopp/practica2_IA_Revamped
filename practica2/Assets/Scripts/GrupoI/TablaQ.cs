@@ -33,6 +33,7 @@ public class TablaQ
     public int numFranjasDist = 4;  // 4 posibles franjas de distancia
     public int numCuadrantes = 4;   // 4 u 8 posibles cuadrantes enemigo respecto al agente
     public int angCuadrantes = 90;
+    public int tamFranjaDist = 10;
     public string ruta = Application.dataPath + "/Scripts/GrupoI/" + "Qtable.csv";    //Ruta archivo CSV
     public List<State> listStates;  // Lista de estados   
     public List<float[]> listValues;    // valores Q de las acciones de cada estado
@@ -45,7 +46,7 @@ public class TablaQ
         listValues = new List<float[]>();
 
         //INICIALIZACIÓN ESTADOS
-
+        int i = 0;
         for (int i0 = 0; i0 < hayMuro; i0++)
         {
             for (int i1 = 0; i1 < hayMuro; i1++)
@@ -62,7 +63,8 @@ public class TablaQ
                                 listStates.Add(addS);                                
                                 listValues.Add(new float[] { 0f, 0f, 0f, 0f });   // Añadir datos inicializados a 0 a la tabla
 
-                                //Debug.Log(addS.up +", "+ addS.right + ", " + addS.down + ", " + addS.left + ", " + addS.cercania + ", " + addS.cuadrante);
+                                Debug.Log("Estado num: "+i +" "+ addS.up +", "+ addS.right + ", " + addS.down + ", " + addS.left + ", " + addS.cercania + ", " + addS.cuadrante);
+                                i++;
                             }
                         }
                     }

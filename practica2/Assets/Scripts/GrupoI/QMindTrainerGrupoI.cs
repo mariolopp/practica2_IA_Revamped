@@ -2,6 +2,7 @@
 using NavigationDJIA.World;
 using QMind.Interfaces;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http.Headers;
@@ -14,8 +15,7 @@ namespace QMind
     {
 
         #region Variables
-        public float Return { get; }
-
+        
         //EPISODIOS
         public int CurrentEpisode { get; private set; }
         public int CurrentStep { get; private set; }
@@ -24,8 +24,9 @@ namespace QMind
         public event EventHandler OnEpisodeFinished;
 
         //RECOMPENSAS
-        public float ReturnAveraged { get; }
-        
+        public float ReturnAveraged { get; private set; }
+        public float Return { get; private set; }
+
         //POSICION DE PERSONAJES EN EL MUNDO
         public CellInfo AgentPosition { get; private set; }
         public CellInfo OtherPosition { get; private set; }
@@ -42,7 +43,7 @@ namespace QMind
         //OTRAS VARIABLES
         public float coefEpsilon;       
         TablaQ tablaq;
-        
+        List<float> totalRewards;
         #endregion
 
 
@@ -53,7 +54,8 @@ namespace QMind
             this.worldInfo = worldInfo;
             nav = navigationAlgorithm;
             nav.Initialize(worldInfo);     
-            tablaq = new TablaQ();            
+            tablaq = new TablaQ();   
+            
             coefEpsilon = 0.0f;       
             episodeWorking = false;            
         }
@@ -65,6 +67,9 @@ namespace QMind
             //--------------------- INICIO EPISODIO-------------------
             if (!episodeWorking)
             {
+                totalRewards = new List<float>();
+                Return = 0;
+                ReturnAveraged = 0;
                 CurrentEpisode++;
                 CurrentStep = 0;
                 AgentPosition = worldInfo.RandomCell();
@@ -251,15 +256,21 @@ namespace QMind
                 }
 
                 tablaq.listValues[index][direction] = (1 - parametros.alpha) * (tablaq.listValues[index][direction]) + parametros.alpha * (r + parametros.gamma * (tablaq.listValues[nextindice].Max()));
+                totalRewards.Add(tablaq.listValues[index][direction]);
+                Return = totalRewards.Sum();
+                ReturnAveraged = totalRewards.Sum() / totalRewards.Count();
             }
             // Si SIGUIENTE POSICION NO CAMINABLE
             else if (!auxNextPos.Walkable)
             {
                 r = -100;
-                tablaq.listValues[index][direction] = (1 - parametros.alpha) * (tablaq.listValues[index][direction]) + parametros.alpha * (r + parametros.gamma * (tablaq.listValues[nextindice].Max()));                    
-
+                tablaq.listValues[index][direction] = (1 - parametros.alpha) * (tablaq.listValues[index][direction]) + parametros.alpha * (r + parametros.gamma * (tablaq.listValues[nextindice].Max()));
+                totalRewards.Add(tablaq.listValues[index][direction]);
+                Return = totalRewards.Sum();
+                ReturnAveraged = totalRewards.Sum()/totalRewards.Count();
                 episodeWorking = false;
                 OnEpisodeFinished?.Invoke(this, EventArgs.Empty);
+                
             }
             // -------------------------------------------
 

@@ -19,7 +19,7 @@ namespace QMind
         //EPISODIOS
         public int CurrentEpisode { get; private set; }
         public int CurrentStep { get; private set; }
-        public bool episodeWorking;
+        public bool episodeWorking = false;
         public event EventHandler OnEpisodeStarted;
         public event EventHandler OnEpisodeFinished;
 
@@ -44,6 +44,7 @@ namespace QMind
         public float coefEpsilon;       
         TablaQ tablaq;
         List<float> totalRewards;
+
         #endregion
 
 
@@ -56,8 +57,7 @@ namespace QMind
             nav.Initialize(worldInfo);     
             tablaq = new TablaQ();
             parametros.epsilon = 1.0f;
-            coefEpsilon = 0.0f;       
-            episodeWorking = false;            
+            coefEpsilon = 0.0f;         
         }
 
         public void DoStep(bool train)
@@ -96,11 +96,11 @@ namespace QMind
                 int indice = tablaq.buscaIndiceEstado(playerState); //Indice del estado actual en la lista de estados
                 float randomNumber = UnityEngine.Random.Range(0f, 1f);  //Numero aleatorio 0-1
                 CellInfo[] path = nav.GetPath(OtherPosition, AgentPosition, 20);    //Camino del enemigo hacia el jugador                
-                CellInfo nextPos = new CellInfo(0, 0);  // Crear como sería la posición de la mejor direccion
+                CellInfo nextPos = new CellInfo(0, 0);  // Crear como seria la posicion de la mejor direccion
 
                 if (path != null && path.Length > 0)
                 {
-                    // Buscar la mejor dirección posible en base a los valores q del estado actual
+                    // Buscar la mejor direccion posible en base a los valores q del estado actual
                     if (randomNumber >= parametros.epsilon)
                     {
                         int bestDirection = tablaq.buscaMejorDireccion(indice);
@@ -126,16 +126,16 @@ namespace QMind
         }
 
 
-        #region Método obtener estados
+        #region Metodo obtener estados
         private State getState(CellInfo agent, CellInfo other)
         {
-            
             float signedangle = Mathf.Atan2(other.y - agent.y, other.x - agent.x) * Mathf.Rad2Deg; // Calcular el angulo en grados hacia el oponente            
-            signedangle = (signedangle + 360 - (tablaq.angCuadrantes / 2)) % 360 ;    // Calcular el cuadrante del oponente en base al angulo            
-            int cuadrante = (int)(signedangle / tablaq.angCuadrantes);
-            Debug.Log(cuadrante);
+            signedangle = (signedangle + 360 - (tablaq.angCuadrantes / 2)) % 360 ;    // Calcular el angulo respecto al oponente en Cº
+            int cuadrante = (int)(signedangle / tablaq.angCuadrantes); // Calcula el indice del cuadrante perteneciente
+            //Debug.Log(cuadrante);
+
             //// Calcular distancia del agente a su oponente
-            // distancia_Manhattan=∣x2−x1∣+∣y2−y1
+            // distancia_Manhattan=|x2-x1|+|y2-y1|
             float dist = agent.Distance(other, CellInfo.DistanceType.Manhattan);
             int cercano = (int)Math.Floor(dist / 10);
 
@@ -145,13 +145,18 @@ namespace QMind
             CellInfo down = worldInfo.NextCell(agent, Directions.Down);
             CellInfo left = worldInfo.NextCell(agent, Directions.Left);
 
+            #region comprobar si hay muros
+            //  1 si hay muro, 0 si no hay nada
+            int upw= up.Walkable ? 0 : 1;
+            int rightw= right.Walkable ? 0 : 1;
+            int downw= down.Walkable ? 0 : 1;
+            int leftw= left.Walkable ? 0 : 1;
+            /*
             int upw;
             int rightw;
             int downw;
             int leftw;
 
-            #region comprobar si hay muros
-            //  1 si hay muro, 0 si no hay nada
             if (up.Walkable)
             {
                 upw = 0;
@@ -187,6 +192,7 @@ namespace QMind
             {
                 leftw = 1;
             }
+            */
             #endregion
 
             // Escribir todos los datos en el estado actual del personaje
@@ -196,12 +202,13 @@ namespace QMind
         }
         #endregion
 
-        #region Método para obtener siguiente posicion personaje
+        #region Metodo para obtener siguiente posicion del personaje
         private CellInfo getNextPos(int direction, CellInfo[] auxPath, int index, State currentState)
         {
             CellInfo auxNextPos = new CellInfo(0,0);
 
             //ESTABLECER NUEVA POSICION DEL PERSONAJE
+            // meterlo en un metodo
             switch (direction)
             {
                 case 0:
@@ -224,7 +231,7 @@ namespace QMind
             // Recompensa
             float r;
 
-            //--------------------- CALCULAR VALOR Q DEL ESTADO EN ESA ACCIÓN -------------------
+            //--------------------- CALCULAR VALOR Q DEL ESTADO EN ESA ACCIoN -------------------
             // SI SIGUIENTE POSICION CAMINABLE
             if (auxNextPos.Walkable)
             {

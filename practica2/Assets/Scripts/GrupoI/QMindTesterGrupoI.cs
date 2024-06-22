@@ -54,7 +54,7 @@ namespace QMind
             float signedangle = Mathf.Atan2(other.y - agent.y, other.x - agent.x) * Mathf.Rad2Deg; // Calcular el angulo en grados hacia el oponente            
             signedangle = (signedangle + 360 - (tablaq.angCuadrantes / 2)) % 360;    // Calcular el cuadrante del oponente en base al angulo            
             int cuadrante = (int)(signedangle / tablaq.angCuadrantes);
-
+            Debug.Log(cuadrante);
             //// Calcular distancia del agente a su oponente
             // distancia_Manhattan=∣x2−x1∣+∣y2−y1
             float dist = agent.Distance(other, CellInfo.DistanceType.Manhattan);
@@ -112,7 +112,7 @@ namespace QMind
 
             // Escribir todos los datos en el estado actual del personaje
             State playerState = new State(upw, rightw, downw, leftw, cercano, cuadrante);
-
+            Debug.Log(upw+" "+ rightw + " " + downw + " " + leftw + " " + cercano + " " + cuadrante);
             return playerState;
         }
     }

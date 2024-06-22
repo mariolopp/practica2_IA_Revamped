@@ -254,6 +254,7 @@ namespace QMind
 
                 r = reward(distActual, distNew, distNewCross);
 
+
                 update(index, direction, nextindice, r);
             }
             // SI SIGUIENTE POSICION NO CAMINABLE
@@ -285,27 +286,27 @@ namespace QMind
             //if (currentState.cercania <= nextState.cercania)
 
             // Si colisionan
-            if (distNew == 0 || distNewCross == 0)
+            if (distNew == 0 || distNewCross == 0 )
             {
-                r = -150f;
+                r = -100f;
                 episodeWorking = false;
                 OnEpisodeFinished?.Invoke(this, EventArgs.Empty);
-                Debug.Log("Recompensa " + r);
+                //Debug.Log("Recompensa " + r);
             } 
             // Si se aleja
-            else if (distNewCross > distActual)
+            else if (distNew > distActual)
             {
-                r = 1f;
+                r = 10f;
             }
             // Si se ha acercado al enemigo
-            else if (distNewCross < distActual)
+            else if (distNew < distActual)
             {
                 r = -10f;
             }
             // Si se han mantenido las distancias
             else
             {
-                r = 1f;
+                r = 0f;
             }
             return r;
         }

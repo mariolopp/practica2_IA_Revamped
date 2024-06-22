@@ -15,7 +15,7 @@ namespace QMind
     {
 
         #region Variables
-        
+
         //EPISODIOS
         public int CurrentEpisode { get; private set; }
         public int CurrentStep { get; private set; }
@@ -30,20 +30,20 @@ namespace QMind
         //POSICION DE PERSONAJES EN EL MUNDO
         public CellInfo AgentPosition { get; private set; }
         public CellInfo OtherPosition { get; private set; }
-        
+
         //PARAMETROS
-        QMindTrainerParams parametros;
+        private QMindTrainerParams parametros;
 
         //MOVIMIENTO ENEMIGO
-        INavigationAlgorithm nav;
+        private INavigationAlgorithm nav;
 
         //INFO DEL MUNDO
-        WorldInfo worldInfo;
+        private WorldInfo worldInfo;
 
         //OTRAS VARIABLES
-        public float coefEpsilon;       
-        TablaQ tablaq;
-        List<float> totalRewards;
+        public float coefEpsilon;
+        private TablaQ tablaq;
+        private List<float> totalRewards;
 
         #endregion
 
@@ -51,20 +51,20 @@ namespace QMind
         public void Initialize(QMindTrainerParams qMindTrainerParams, WorldInfo worldInfo, INavigationAlgorithm navigationAlgorithm)
         {
             //Debug.Log("QMindTrainerDummy: initialized");
-            parametros = qMindTrainerParams; 
+            parametros = qMindTrainerParams;
             this.worldInfo = worldInfo;
             nav = navigationAlgorithm;
-            nav.Initialize(worldInfo);     
+            nav.Initialize(worldInfo);
             tablaq = new TablaQ();
             parametros.epsilon = 1.0f;
-            coefEpsilon = 0.0f;         
+            coefEpsilon = 0.0f;
         }
 
         public void DoStep(bool train)
         {
 
             //Debug.Log("QMindTrainerDummy: DoStep");
-            //--------------------- INICIO EPISODIO-------------------
+            //--------------------- INICIO EPISODIO -------------------
             if (!episodeWorking)
             {
                 totalRewards = new List<float>();
@@ -74,16 +74,16 @@ namespace QMind
                 CurrentStep = 0;
                 AgentPosition = worldInfo.RandomCell();
                 OtherPosition = worldInfo.RandomCell();
-                
+
                 if (CurrentEpisode % parametros.episodesBetweenSaves == 0)
                 {
                     Debug.Log("Guardando tabla");
                     tablaq.guardarCSV(tablaq.ruta);
-                    coefEpsilon = (CurrentEpisode / (float)parametros.episodes)*3.0f;
+                    coefEpsilon = (CurrentEpisode / (float)parametros.episodes) * 3.0f;
                     parametros.epsilon = Mathf.Exp(-coefEpsilon);
                     Debug.Log(parametros.epsilon);
                 }
-                
+
                 episodeWorking = true;
                 OnEpisodeStarted?.Invoke(this, EventArgs.Empty);
             }
@@ -92,31 +92,38 @@ namespace QMind
             //--------------------------- CONTINUACION EPISODIO ------------------------------------
             else
             {
-                State playerState = getState(AgentPosition,OtherPosition); //Estado actual
-                int indice = tablaq.buscaIndiceEstado(playerState); //Indice del estado actual en la lista de estados
-                float randomNumber = UnityEngine.Random.Range(0f, 1f);  //Numero aleatorio 0-1
-                CellInfo[] path = nav.GetPath(OtherPosition, AgentPosition, 20);    //Camino del enemigo hacia el jugador                
-                CellInfo nextPos = new CellInfo(0, 0);  // Crear como seria la posicion de la mejor direccion
+                State playerState = getState(AgentPosition, OtherPosition);     // Estado actual
+                int indice = tablaq.buscaIndiceEstado(playerState);             // Indice del estado actual en la lista de estados
+                float randomNumber = UnityEngine.Random.Range(0f, 1f);          // Numero aleatorio 0-1
+                CellInfo[] path = nav.GetPath(OtherPosition, AgentPosition, 20);// Camino del enemigo hacia el jugador                
 
+                // Se consideraba la posicion futura, esto podia hacer que al calcular 
+                // las distancias y otros parametros se diera la misma ocasion y el 
+                // agente no se diera cuenta de que se estaba alejando lo que es algo 
+                // positivo, para ello se pone despues de todo el calculo que hay 
+                // respecto el agente y se actualiza la posicion del perseguidor despues
                 if (path != null && path.Length > 0)
                 {
+                    //OtherPosition = path[0]; // calcularlo antes - Cosas diferentes
+                    int nextDirection; // Crear como seria la posicion de la mejor direccion
                     // Buscar la mejor direccion posible en base a los valores q del estado actual
                     if (randomNumber >= parametros.epsilon)
                     {
-                        int bestDirection = tablaq.buscaMejorDireccion(indice);
-                        nextPos = getNextPos(bestDirection, path, indice, playerState);
-
+                        nextDirection = tablaq.buscaMejorDireccion(indice);
                     }
                     // Usa direccion aleatoria
                     else
                     {
-                        int direccionRandom = UnityEngine.Random.Range(0, 4);
-                        nextPos = getNextPos(direccionRandom, path, indice, playerState);
+                        nextDirection = UnityEngine.Random.Range(0, 4);
                     }
+                    CellInfo nextPos = getNextPos(nextDirection, path[0], indice, playerState);
                     AgentPosition = nextPos;
-                    OtherPosition = path[0];
+                    OtherPosition = path[0]; // calcularlo despues - Cosas diferentes
                     CurrentStep++;
                 }
+                // Os dejo esto aqui pero deberiais de tener un metodo que os diga
+                // si algo es terminal o no
+                // Encapsulariais toda la logica para acabarlo facilmente ;)
                 else
                 {
                     OnEpisodeFinished?.Invoke(this, EventArgs.Empty);
@@ -130,7 +137,7 @@ namespace QMind
         private State getState(CellInfo agent, CellInfo other)
         {
             float signedangle = Mathf.Atan2(other.y - agent.y, other.x - agent.x) * Mathf.Rad2Deg; // Calcular el angulo en grados hacia el oponente            
-            signedangle = (signedangle + 360 - (tablaq.angCuadrantes / 2)) % 360 ;    // Calcular el angulo respecto al oponente en Cº
+            signedangle = (signedangle + 360 - (tablaq.angCuadrantes / 2)) % 360;    // Calcular el angulo respecto al oponente en Cº
             int cuadrante = (int)(signedangle / tablaq.angCuadrantes); // Calcula el indice del cuadrante perteneciente
             //Debug.Log(cuadrante);
 
@@ -147,10 +154,10 @@ namespace QMind
 
             #region comprobar si hay muros
             //  1 si hay muro, 0 si no hay nada
-            int upw= up.Walkable ? 0 : 1;
-            int rightw= right.Walkable ? 0 : 1;
-            int downw= down.Walkable ? 0 : 1;
-            int leftw= left.Walkable ? 0 : 1;
+            int upw = up.Walkable ? 0 : 1;
+            int rightw = right.Walkable ? 0 : 1;
+            int downw = down.Walkable ? 0 : 1;
+            int leftw = left.Walkable ? 0 : 1;
             /*
             int upw;
             int rightw;
@@ -203,12 +210,11 @@ namespace QMind
         #endregion
 
         #region Metodo para obtener siguiente posicion del personaje
-        private CellInfo getNextPos(int direction, CellInfo[] auxPath, int index, State currentState)
+        private CellInfo getNextPos(int direction, CellInfo otherFuturePosition, int index, State currentState)
         {
-            CellInfo auxNextPos = new CellInfo(0,0);
+            CellInfo auxNextPos = new CellInfo(0, 0);
 
             //ESTABLECER NUEVA POSICION DEL PERSONAJE
-            // meterlo en un metodo
             switch (direction)
             {
                 case 0:
@@ -226,7 +232,7 @@ namespace QMind
             }
 
             // Estado siguiente
-            State nextState = getState(auxNextPos, auxPath[0]);
+            State nextState = getState(auxNextPos, otherFuturePosition); // Obtengo el estado futuro
             int nextindice = tablaq.buscaIndiceEstado(nextState);
             // Recompensa
             float r;
@@ -235,53 +241,69 @@ namespace QMind
             // SI SIGUIENTE POSICION CAMINABLE
             if (auxNextPos.Walkable)
             {
+
+                // Distancia entre la pos vieja del zombie y pos vieja del perseguidor // bien
                 float distActual = AgentPosition.Distance(OtherPosition, CellInfo.DistanceType.Manhattan);
-                float distNew = auxNextPos.Distance(auxPath[0], CellInfo.DistanceType.Manhattan);
+                // Distancia entre la pos nueva del zombie y pos nueva del perseguidor // mal
+                float distNew = auxNextPos.Distance(otherFuturePosition, CellInfo.DistanceType.Manhattan);
+                // Distancia entre la pos nueva del zombie y pos vieja del perseguidor // bien
                 float distNewCross = auxNextPos.Distance(OtherPosition, CellInfo.DistanceType.Manhattan);
 
-                // Si el agente se ha alejado del enemigo
-                if (currentState.cercania == 2 && nextState.cercania == 3)
-                {
-                    r = 100;
-                }
-                // Si se ha acercado al enemigo
-                else if (distNew < distActual)
-                {
-                    r = -10;
-                }
-                // Si colisionan
-                else if (distNew == 0 || distNewCross == 0)
-                {
-                    r = -100;
-                    episodeWorking = false;
-                    OnEpisodeFinished?.Invoke(this, EventArgs.Empty);
-                }
-                // Si se han mantenido las distancias
-                else
-                {                    
-                    r = 0;
-                }
+                r = reward(distActual, distNew, distNewCross);
 
-                tablaq.listValues[index][direction] = (1 - parametros.alpha) * (tablaq.listValues[index][direction]) + parametros.alpha * (r + parametros.gamma * (tablaq.listValues[nextindice].Max()));
-                totalRewards.Add(tablaq.listValues[index][direction]);
-                Return = totalRewards.Sum();
-                ReturnAveraged = totalRewards.Sum() / totalRewards.Count();
+                update(index, direction, nextindice, r);
             }
-            // Si SIGUIENTE POSICION NO CAMINABLE
-            else if (!auxNextPos.Walkable)
+            // SI SIGUIENTE POSICION NO CAMINABLE
+            else
             {
                 r = -100;
-                tablaq.listValues[index][direction] = (1 - parametros.alpha) * (tablaq.listValues[index][direction]) + parametros.alpha * (r + parametros.gamma * (tablaq.listValues[nextindice].Max()));
-                totalRewards.Add(tablaq.listValues[index][direction]);
-                Return = totalRewards.Sum();
-                ReturnAveraged = totalRewards.Sum()/totalRewards.Count();
+                update(index, direction, nextindice, r);
                 episodeWorking = false;
                 OnEpisodeFinished?.Invoke(this, EventArgs.Empty);
-                
             }
             // -------------------------------------------
 
             return auxNextPos;
+        }
+        #endregion
+        #region gestion tabla corto
+        private void update(int index, int direction, int nextindice, float r)
+        {
+            tablaq.listValues[index][direction] = (1 - parametros.alpha) * (tablaq.listValues[index][direction]) +
+            parametros.alpha * (r + parametros.gamma * (tablaq.listValues[nextindice].Max()));
+            totalRewards.Add(tablaq.listValues[index][direction]);
+            Return = totalRewards.Sum();
+            ReturnAveraged = totalRewards.Sum() / totalRewards.Count();
+        }
+        private float reward(float distActual, float distNew, float distNewCross)
+        {
+            float r;
+            // Si el agente se ha alejado del enemigo
+            //if (currentState.cercania <= nextState.cercania)
+
+            // Si colisionan
+            if (distNew == 0 || distNewCross == 0)
+            {
+                r = -100f;
+                episodeWorking = false;
+                OnEpisodeFinished?.Invoke(this, EventArgs.Empty);
+            } 
+            // Si se aleja
+            else if (distNew > distActual)
+            {
+                r = 10f;
+            }
+            // Si se ha acercado al enemigo
+            else if (distNew < distActual)
+            {
+                r = -10f;
+            }
+            // Si se han mantenido las distancias
+            else
+            {
+                r = 10f;
+            }
+            return r;
         }
         #endregion
     }

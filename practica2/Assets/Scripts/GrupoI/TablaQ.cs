@@ -30,10 +30,10 @@ public class TablaQ
     #region Variables
 
     public int hayMuro = 2;  // 2 posibles casos
-    public int numFranjasDist = 4;  // 3 posibles franjas de distancia
+    public int numFranjasDist = 3;  // 3 posibles franjas de distancia
     public int numCuadrantes = 8;   // 4 u 8 posibles cuadrantes enemigo respecto al agente
     public int angCuadrantes {get => 360/numCuadrantes;}
-    public int tamFranjaDist = 10;
+    //public int tamFranjaDist = 10;
     public string ruta = Application.dataPath + "/Scripts/GrupoI/" + "Qtable.csv";    //Ruta archivo CSV
     public List<State> listStates;  // Lista de estados   
     public List<float[]> listValues;    // valores Q de las acciones de cada estado

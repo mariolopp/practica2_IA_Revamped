@@ -144,7 +144,10 @@ namespace QMind
             //// Calcular distancia del agente a su oponente
             // distancia_Manhattan=|x2-x1|+|y2-y1|
             float dist = agent.Distance(other, CellInfo.DistanceType.Manhattan);
-            int cercano = (int)Math.Floor(dist / 10);
+            
+            // Calculo la franja de distancia (el min deberia seleccionar siempre al de la izq,
+            // pero el caso de ser distancia 40 clavado podría salir 3 y el floor a 3 en vez de 2.9999 con floor a 2)
+            int cercano = (int)Math.Min( Math.Floor(dist / (40/tablaq.numFranjasDist)),(tablaq.numFranjasDist-1));
 
             // Devuelve si arriba hay muro
             CellInfo up = worldInfo.NextCell(agent, Directions.Up);
@@ -284,24 +287,25 @@ namespace QMind
             // Si colisionan
             if (distNew == 0 || distNewCross == 0)
             {
-                r = -100f;
+                r = -150f;
                 episodeWorking = false;
                 OnEpisodeFinished?.Invoke(this, EventArgs.Empty);
+                Debug.Log("Recompensa " + r);
             } 
             // Si se aleja
-            else if (distNew > distActual)
+            else if (distNewCross > distActual)
             {
-                r = 10f;
+                r = 1f;
             }
             // Si se ha acercado al enemigo
-            else if (distNew < distActual)
+            else if (distNewCross < distActual)
             {
                 r = -10f;
             }
             // Si se han mantenido las distancias
             else
             {
-                r = 10f;
+                r = 1f;
             }
             return r;
         }

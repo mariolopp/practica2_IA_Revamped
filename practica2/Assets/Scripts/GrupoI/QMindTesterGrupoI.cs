@@ -58,7 +58,7 @@ namespace QMind
             //// Calcular distancia del agente a su oponente
             // distancia_Manhattan=∣x2−x1∣+∣y2−y1
             float dist = agent.Distance(other, CellInfo.DistanceType.Manhattan);
-            int cercano = (int)Math.Floor(dist / tablaq.tamFranjaDist);
+            int cercano = (int)Math.Min(Math.Floor(dist / (40 / tablaq.numFranjasDist)), (tablaq.numFranjasDist - 1));
 
             // Devuelve si arriba hay muro
             CellInfo up = worldInfo.NextCell(agent, Directions.Up);

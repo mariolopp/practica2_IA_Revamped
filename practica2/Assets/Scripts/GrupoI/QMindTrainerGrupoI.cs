@@ -156,7 +156,7 @@ namespace QMind
             // Calculo la franja de distancia (el min deberia seleccionar siempre al de la izq,
             // pero el caso de ser distancia 40 clavado podría salir 3 y el floor a 3 en vez de 2.9999 con floor a 2)
             //int cercano = (int)Math.Min(Math.Floor(dist / (40 / tablaq.numFranjasDist)), (tablaq.numFranjasDist - 1));
-            int cercano = 0;
+            int cercano;
             if      (dist >= 0 && dist <= tablaq.franja1) { cercano = 0; }
             else if (dist > tablaq.franja1 && dist <= tablaq.franja2) { cercano = 1; }
             else if (dist > tablaq.franja2 && dist <= tablaq.franja3) { cercano = 2; }
@@ -261,7 +261,6 @@ namespace QMind
             // SI SIGUIENTE POSICION CAMINABLE
             if (auxNextPos.Walkable)
             {
-
                 // Distancia entre la pos vieja del zombie y pos vieja del perseguidor // bien
                 float distActual = AgentPosition.Distance(OtherPosition, CellInfo.DistanceType.Manhattan);
                 // Distancia entre la pos nueva del zombie y pos nueva del perseguidor // mal
@@ -269,15 +268,16 @@ namespace QMind
                 // Distancia entre la pos nueva del zombie y pos vieja del perseguidor // bien
                 float distNewCross = auxNextPos.Distance(OtherPosition, CellInfo.DistanceType.Manhattan);
 
-                r = reward(distActual, distNew, distNewCross);
-
-                update(index, direction, nextindice, r);
+                r = Reward(distActual, distNew, distNewCross);
+                UpdateQ(index, direction, nextindice, r);
             }
             // SI SIGUIENTE POSICION NO CAMINABLE
             else
             {
+
+                Debug.Log("estado actualizado: " + currentState.up + " " + currentState.right + " " + currentState.down + " " + currentState.left + " " + currentState.cercania + " " + currentState.cuadrante);
                 r = -100;
-                update(index, direction, nextindice, r);
+                UpdateQ(index, direction, nextindice, r);
                 episodeWorking = false;
                 OnEpisodeFinished?.Invoke(this, EventArgs.Empty);
             }
@@ -287,47 +287,47 @@ namespace QMind
         }
         #endregion
         #region gestion tabla corto
-        private void update(int index, int direction, int nextindice, float r)
+        private void UpdateQ(int index, int direction, int nextindice, float reward)
         {
             // Aplicar la formula
             tablaq.listValues[index][direction] = (1 - parametros.alpha) * (tablaq.listValues[index][direction]) +
-            parametros.alpha * (r + parametros.gamma * (tablaq.listValues[nextindice].Max()));
+            parametros.alpha * (reward + parametros.gamma * (tablaq.listValues[nextindice].Max()));
 
             // Para ver las estadisticas por pantalla
             totalRewards.Add(tablaq.listValues[index][direction]);
             Return = totalRewards.Sum();
             ReturnAveraged = totalRewards.Sum() / totalRewards.Count();
         }
-        private float reward(float distActual, float distNew, float distNewCross)
+        private float Reward(float distActual, float distNew, float distNewCross)
         {
-            float r;
+            float auxR;
             // Si el agente se ha alejado del enemigo
             //if (currentState.cercania <= nextState.cercania)
 
             // Si colisionan
-            if (distNew == 0 || distNewCross == 0)
+            if (distNew <= 0 || distNewCross <= 0)
             {
-                r = -100f;
+                auxR = -100f;
                 episodeWorking = false;
                 OnEpisodeFinished?.Invoke(this, EventArgs.Empty);
                 //Debug.Log("Recompensa " + r);
             }
-            // Si se aleja
-            else if (distNew > distActual)
-            {
-                r = 0f;
-            }
+            //// Si se aleja
+            //else if (distNew > distActual)
+            //{
+            //    auxR = 50f;
+            //}
             // Si se ha acercado al enemigo
             else if (distNew < distActual)
             {
-                r = -10f;
+                auxR = -50f;
             }
             // Si se han mantenido las distancias
             else
             {
-                r = 0f;
+                auxR = 0f;
             }
-            return r;
+            return auxR;
         }
         #endregion
     }

@@ -68,7 +68,7 @@ public class TablaQ
                                 listStates.Add(addS);                                
                                 listValues.Add(new float[] { 0f, 0f, 0f, 0f });   // Añadir datos inicializados a 0 a la tabla
 
-                                Debug.Log("Estado num: "+i +" "+ addS.up +", "+ addS.right + ", " + addS.down + ", " + addS.left + ", " + addS.cercania + ", " + addS.cuadrante);
+                                //Debug.Log("Estado num: "+i +" "+ addS.up +", "+ addS.right + ", " + addS.down + ", " + addS.left + ", " + addS.cercania + ", " + addS.cuadrante);
                                 i++;
                             }
                         }
@@ -161,11 +161,6 @@ public class TablaQ
             foreach (float[] fila in listValues)
             {
                 writer.WriteLine(string.Join(";", fila));
-                //foreach (float value in fila) { 
-                //    // Convertir cada valor float a string y escribirlos en el archivo, separados por comas
-                //    writer.Write(value + ";"); // value + ";"
-                //}
-                //writer.WriteLine("");
             }
         }
     }

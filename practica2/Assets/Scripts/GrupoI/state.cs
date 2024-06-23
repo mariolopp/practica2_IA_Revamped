@@ -5,20 +5,21 @@ public class State
     #region Variables
     // Atributos de cada estado
     public int up;
+    public int right;
     public int down;
     public int left;
-    public int right;
+
     public int cercania;
     public int cuadrante;
     #endregion
 
     #region Constructores
     public State() { 
-        up = 0; down = 0; left = 0; right = 0; cercania = 0; cuadrante = 0;
+        up = 0; right = 0; down = 0; left = 0; cercania = 0; cuadrante = 0;
     }
-    public State(int u, int d, int l, int r, int closer, int cuad)
+    public State(int u, int r, int d, int l, int closer, int cuad)
     { // Constructor
-        up = u; down = d; left = l; right = r; cercania = closer; cuadrante = cuad;
+        up = u; right = r; down = d; left = l;  cercania = closer; cuadrante = cuad;
     }
     #endregion
 
@@ -36,6 +37,22 @@ public class State
                 this.cuadrante == other.cuadrante);
         }
         return false;
+    }
+
+    public bool isCorner()
+    {
+        State upRightCorner = new State(1, 1, 0, 0, 0, 4);
+        State upLeftCorner = new State(1, 0, 0, 1, 0, 6);
+        State downRightCorner = new State(0, 1, 1, 0, 0, 2);
+        State downLeftCorner = new State(0, 0, 1, 1, 0, 0);
+        if (Equals(upRightCorner) || Equals(upLeftCorner) || Equals(downRightCorner) || Equals(downLeftCorner))
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
     }
     #endregion
 }

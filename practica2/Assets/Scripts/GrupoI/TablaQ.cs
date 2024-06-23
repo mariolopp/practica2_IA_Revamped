@@ -30,9 +30,9 @@ public class TablaQ
     #region Variables
 
     public int hayMuro = 2;  // 2 posibles casos
-    public int numFranjasDist = 3;  // 3 posibles franjas de distancia
+    public int numFranjasDist = 4;  // 3 posibles franjas de distancia
     
-    public int franja1=1, franja2=2, franja3=40;    // el maximo dist es 40, poner en la ultima un 40 siempre
+    public int franja1=2, franja2=10, franja3 = 25, franja4=40;    // el maximo dist es 40, poner en la ultima un 40 siempre
     // La distancia esta entre franjaAnterior(sin incluir) a franjaSig(incluida) excepto la primera que si incluye el 0
     // Por ej f1=1, f2=3 f3=40: 0-1: cerc=0; (1)-3: cerc=1; (3)-40 cerc=2;  Parentesis si num es no inclusive
 

@@ -92,7 +92,7 @@ namespace QMind
             //--------------------------- CONTINUACION EPISODIO ------------------------------------
             else
             {
-                State playerState = getState(AgentPosition, OtherPosition);     // Estado actual
+                State playerState = getState(AgentPosition, OtherPosition, worldInfo, tablaq);     // Estado actual
                 int indice = tablaq.buscaIndiceEstado(playerState);             // Indice del estado actual en la lista de estados
                 float randomNumber = UnityEngine.Random.Range(0f, 1f);          // Numero aleatorio 0-1
                 CellInfo[] path = nav.GetPath(OtherPosition, AgentPosition, 20);// Camino del enemigo hacia el jugador                
@@ -134,7 +134,7 @@ namespace QMind
 
 
         #region Metodo obtener estados
-        private State getState(CellInfo agent, CellInfo other)
+        public State getState(CellInfo agent, CellInfo other, WorldInfo worldInfo, TablaQ tablaq)
         {
             Vector2 dif = new Vector2(other.x, other.y) - new Vector2(agent.x, agent.y);
             //float signedangle = Mathf.Atan2(other.y - agent.y, other.x - agent.x) * Mathf.Rad2Deg; // Calcular el angulo en grados hacia el oponente            
@@ -160,10 +160,11 @@ namespace QMind
             if      (dist >= 0 && dist <= tablaq.franja1) { cercano = 0; }
             else if (dist > tablaq.franja1 && dist <= tablaq.franja2) { cercano = 1; }
             else if (dist > tablaq.franja2 && dist <= tablaq.franja3) { cercano = 2; }
+            else if (dist > tablaq.franja3 && dist <= tablaq.franja4) { cercano = 3; }
             else
             {
                 Debug.Log("Las franjas de distancia obtenida no esta en las franjas delimitadas, revise las franjas en TablaQ.cs");
-                cercano = 2;
+                cercano = 3;
             }
             // Devuelve si arriba hay muro
             CellInfo up = worldInfo.NextCell(agent, Directions.Up);
@@ -251,7 +252,7 @@ namespace QMind
             }
 
             // Estado siguiente
-            State nextState = getState(auxNextPos, otherFuturePosition); // Obtengo el estado futuro
+            State nextState = getState(auxNextPos, otherFuturePosition, worldInfo, tablaq); // Obtengo el estado futuro
             int nextindice = tablaq.buscaIndiceEstado(nextState);
             // Recompensa
             float r;

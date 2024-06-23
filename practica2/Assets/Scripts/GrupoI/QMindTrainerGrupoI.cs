@@ -136,9 +136,17 @@ namespace QMind
         #region Metodo obtener estados
         private State getState(CellInfo agent, CellInfo other)
         {
-            float signedangle = Mathf.Atan2(other.y - agent.y, other.x - agent.x) * Mathf.Rad2Deg; // Calcular el angulo en grados hacia el oponente            
-            signedangle = (signedangle + 360 - (tablaq.angCuadrantes / 2)) % 360;    // Calcular el angulo respecto al oponente en Cº
+            Vector2 dif = new Vector2(other.x, other.y) - new Vector2(agent.x, agent.y);
+            //float signedangle = Mathf.Atan2(other.y - agent.y, other.x - agent.x) * Mathf.Rad2Deg; // Calcular el angulo en grados hacia el oponente            
+            float signedangle = Vector2.SignedAngle(new Vector2(1, 0), dif); // Calcular el angulo en grados hacia el oponente            
+            
+            signedangle = (signedangle - (tablaq.angCuadrantes / 2));    // Calcular el cuadrante del oponente en base al angulo en Cº
+            if (signedangle < 0)
+            {
+                signedangle += 360;
+            }
             int cuadrante = (int)(signedangle / tablaq.angCuadrantes); // Calcula el indice del cuadrante perteneciente
+            
             //Debug.Log(cuadrante);
 
             //// Calcular distancia del agente a su oponente
@@ -254,7 +262,6 @@ namespace QMind
 
                 r = reward(distActual, distNew, distNewCross);
 
-
                 update(index, direction, nextindice, r);
             }
             // SI SIGUIENTE POSICION NO CAMINABLE
@@ -273,8 +280,11 @@ namespace QMind
         #region gestion tabla corto
         private void update(int index, int direction, int nextindice, float r)
         {
+            // Aplicar la formula
             tablaq.listValues[index][direction] = (1 - parametros.alpha) * (tablaq.listValues[index][direction]) +
             parametros.alpha * (r + parametros.gamma * (tablaq.listValues[nextindice].Max()));
+            
+            // Para ver las estadisticas por pantalla
             totalRewards.Add(tablaq.listValues[index][direction]);
             Return = totalRewards.Sum();
             ReturnAveraged = totalRewards.Sum() / totalRewards.Count();
@@ -296,7 +306,7 @@ namespace QMind
             // Si se aleja
             else if (distNew > distActual)
             {
-                r = 10f;
+                r = 0f;
             }
             // Si se ha acercado al enemigo
             else if (distNew < distActual)

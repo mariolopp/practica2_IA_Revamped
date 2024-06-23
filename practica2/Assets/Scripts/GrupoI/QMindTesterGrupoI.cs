@@ -51,10 +51,16 @@ namespace QMind
         private State getState(CellInfo agent, CellInfo other)
         {
 
-            float signedangle = Mathf.Atan2(other.y - agent.y, other.x - agent.x) * Mathf.Rad2Deg; // Calcular el angulo en grados hacia el oponente            
-            signedangle = (signedangle + 360 - (tablaq.angCuadrantes / 2)) % 360;    // Calcular el cuadrante del oponente en base al angulo            
-            int cuadrante = (int)(signedangle / tablaq.angCuadrantes);
-            Debug.Log(cuadrante);
+            Vector2 dif = new Vector2(other.x, other.y) - new Vector2(agent.x, agent.y);
+            //float signedangle = Mathf.Atan2(other.y - agent.y, other.x - agent.x) * Mathf.Rad2Deg; // Calcular el angulo en grados hacia el oponente            
+            float signedangle = Vector2.SignedAngle(new Vector2(1, 0), dif); // Calcular el angulo en grados hacia el oponente            
+
+            signedangle = (signedangle - (tablaq.angCuadrantes / 2));    // Calcular el cuadrante del oponente en base al angulo en Cº
+            if (signedangle < 0)
+            {
+                signedangle += 360;
+            }
+            int cuadrante = (int)(signedangle / tablaq.angCuadrantes); // Calcula el indice del cuadrante perteneciente
             //// Calcular distancia del agente a su oponente
             // distancia_Manhattan=∣x2−x1∣+∣y2−y1
             float dist = agent.Distance(other, CellInfo.DistanceType.Manhattan);

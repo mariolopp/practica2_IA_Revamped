@@ -139,24 +139,32 @@ namespace QMind
             Vector2 dif = new Vector2(other.x, other.y) - new Vector2(agent.x, agent.y);
             //float signedangle = Mathf.Atan2(other.y - agent.y, other.x - agent.x) * Mathf.Rad2Deg; // Calcular el angulo en grados hacia el oponente            
             float signedangle = Vector2.SignedAngle(new Vector2(1, 0), dif); // Calcular el angulo en grados hacia el oponente            
-            
+
             signedangle = (signedangle - (tablaq.angCuadrantes / 2));    // Calcular el cuadrante del oponente en base al angulo en Cº
             if (signedangle < 0)
             {
                 signedangle += 360;
             }
             int cuadrante = (int)(signedangle / tablaq.angCuadrantes); // Calcula el indice del cuadrante perteneciente
-            
+
             //Debug.Log(cuadrante);
 
             //// Calcular distancia del agente a su oponente
             // distancia_Manhattan=|x2-x1|+|y2-y1|
             float dist = agent.Distance(other, CellInfo.DistanceType.Manhattan);
-            
+
             // Calculo la franja de distancia (el min deberia seleccionar siempre al de la izq,
             // pero el caso de ser distancia 40 clavado podría salir 3 y el floor a 3 en vez de 2.9999 con floor a 2)
-            int cercano = (int)Math.Min( Math.Floor(dist / (40/tablaq.numFranjasDist)),(tablaq.numFranjasDist-1));
-
+            //int cercano = (int)Math.Min(Math.Floor(dist / (40 / tablaq.numFranjasDist)), (tablaq.numFranjasDist - 1));
+            int cercano = 0;
+            if      (dist >= 0 && dist <= tablaq.franja1) { cercano = 0; }
+            else if (dist > tablaq.franja1 && dist <= tablaq.franja2) { cercano = 1; }
+            else if (dist > tablaq.franja2 && dist <= tablaq.franja3) { cercano = 2; }
+            else
+            {
+                Debug.Log("Las franjas de distancia obtenida no esta en las franjas delimitadas, revise las franjas en TablaQ.cs");
+                cercano = 2;
+            }
             // Devuelve si arriba hay muro
             CellInfo up = worldInfo.NextCell(agent, Directions.Up);
             CellInfo right = worldInfo.NextCell(agent, Directions.Right);
@@ -283,7 +291,7 @@ namespace QMind
             // Aplicar la formula
             tablaq.listValues[index][direction] = (1 - parametros.alpha) * (tablaq.listValues[index][direction]) +
             parametros.alpha * (r + parametros.gamma * (tablaq.listValues[nextindice].Max()));
-            
+
             // Para ver las estadisticas por pantalla
             totalRewards.Add(tablaq.listValues[index][direction]);
             Return = totalRewards.Sum();
@@ -296,13 +304,13 @@ namespace QMind
             //if (currentState.cercania <= nextState.cercania)
 
             // Si colisionan
-            if (distNew == 0 || distNewCross == 0 )
+            if (distNew == 0 || distNewCross == 0)
             {
                 r = -100f;
                 episodeWorking = false;
                 OnEpisodeFinished?.Invoke(this, EventArgs.Empty);
                 //Debug.Log("Recompensa " + r);
-            } 
+            }
             // Si se aleja
             else if (distNew > distActual)
             {

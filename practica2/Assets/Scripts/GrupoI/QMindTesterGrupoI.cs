@@ -64,7 +64,15 @@ namespace QMind
             //// Calcular distancia del agente a su oponente
             // distancia_Manhattan=∣x2−x1∣+∣y2−y1
             float dist = agent.Distance(other, CellInfo.DistanceType.Manhattan);
-            int cercano = (int)Math.Min(Math.Floor(dist / (40 / tablaq.numFranjasDist)), (tablaq.numFranjasDist - 1));
+            //int cercano = (int)Math.Min(Math.Floor(dist / (40 / tablaq.numFranjasDist)), (tablaq.numFranjasDist - 1));
+            int cercano = 0;
+            if (dist >= 0 && dist <= tablaq.franja1) { cercano = 0; }
+            else if (dist > tablaq.franja1 && dist <= tablaq.franja2) { cercano = 1; }
+            else if (dist > tablaq.franja2 && dist <= tablaq.franja3) { cercano = 2; }
+            else { 
+                Debug.Log("Las franjas de distancia obtenida no esta en las franjas delimitadas, revise las franjas en TablaQ.cs");
+                cercano = 2;
+            }
 
             // Devuelve si arriba hay muro
             CellInfo up = worldInfo.NextCell(agent, Directions.Up);

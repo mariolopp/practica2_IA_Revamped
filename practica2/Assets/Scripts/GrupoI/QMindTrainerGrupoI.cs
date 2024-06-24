@@ -9,6 +9,7 @@ using System.Net.Http.Headers;
 using Unity.VisualScripting;
 using UnityEngine;
 
+// ------------- CLASE DE ENTRENO DE LA TABLA Q --------------------
 namespace QMind
 {
     public class QMindTrainerGrupoI : IQMindTrainer
@@ -47,49 +48,50 @@ namespace QMind
 
         #endregion
 
-
+        #region Métodos de la Interfaz
         public void Initialize(QMindTrainerParams qMindTrainerParams, WorldInfo worldInfo, INavigationAlgorithm navigationAlgorithm)
         {
-            //Debug.Log("QMindTrainerDummy: initialized");
             parametros = qMindTrainerParams;
             this.worldInfo = worldInfo;
             nav = navigationAlgorithm;
             nav.Initialize(worldInfo);
             tablaq = new TablaQ();
-            parametros.epsilon = 1.0f;
-            coefEpsilon = 0.0f;
+            parametros.epsilon = 1.0f;      // Parametro epsilo a 1 por defecto
+            coefEpsilon = 0.0f;             // coeficiente de calculo del descenso del parametro epsilon
         }
 
+        // ------------------- MÉTODO PRINCIPAL -----------------------
         public void DoStep(bool train)
         {
 
-            //Debug.Log("QMindTrainerDummy: DoStep");
             //--------------------- INICIO EPISODIO -------------------
+            //Al inicio del episodio
             if (!episodeWorking)
             {
+                // Resetear todos los valores y cambiar posición personajes aleatoriamente
                 totalRewards = new List<float>();
                 Return = 0;
                 ReturnAveraged = 0;
-                CurrentEpisode++;
-                CurrentStep = 0;
+                CurrentStep = 0;                    
                 AgentPosition = worldInfo.RandomCell();
                 OtherPosition = worldInfo.RandomCell();
+                CurrentEpisode++;   // aumentar número episodio
 
+                // Por cada número establecido de episodios, actualizar tabla q
                 if (CurrentEpisode % parametros.episodesBetweenSaves == 0)
                 {
-                    Debug.Log("Guardando tabla");
                     tablaq.guardarCSV(tablaq.ruta);
-                    coefEpsilon = (CurrentEpisode / (float)parametros.episodes) * 3.0f;
-                    parametros.epsilon = Mathf.Exp(-coefEpsilon);
-                    Debug.Log(parametros.epsilon);
+                    coefEpsilon = (CurrentEpisode / (float)parametros.episodes) * 3.0f; // Coeficiente de función e^-(coefEpsilon)
+                    parametros.epsilon = Mathf.Exp(-coefEpsilon);   // Función e^-(coefEpsilon) (Se reducé gradualmente el porcentaje de entrenos aleatorios)
                 }
 
+                // Activación del episodio
                 episodeWorking = true;
                 OnEpisodeStarted?.Invoke(this, EventArgs.Empty);
             }
-            //--------------------------------------------------------
+            //-------------------- FIN INICIO EPISODIO --------------------
 
-            //--------------------------- CONTINUACION EPISODIO ------------------------------------
+            //--------------------------- CONTINUAR EPISODIO ------------------------------------
             else
             {
                 State playerState = getState(AgentPosition, OtherPosition, worldInfo, tablaq);     // Estado actual
@@ -97,16 +99,12 @@ namespace QMind
                 float randomNumber = UnityEngine.Random.Range(0f, 1f);          // Numero aleatorio 0-1
                 CellInfo[] path = nav.GetPath(OtherPosition, AgentPosition, 20);// Camino del enemigo hacia el jugador                
 
-                // Se consideraba la posicion futura, esto podia hacer que al calcular 
-                // las distancias y otros parametros se diera la misma ocasion y el 
-                // agente no se diera cuenta de que se estaba alejando lo que es algo 
-                // positivo, para ello se pone despues de todo el calculo que hay 
-                // respecto el agente y se actualiza la posicion del perseguidor despues
+                // Cuando el perseguidor no está junto al perseguido (evitar Error index out of range)
                 if (path != null && path.Length > 0)
                 {
-                    //OtherPosition = path[0]; // calcularlo antes - Cosas diferentes
                     int nextDirection; // Crear como seria la posicion de la mejor direccion
-                    // Buscar la mejor direccion posible en base a los valores q del estado actual
+
+                    // Busca la mejor direccion posible en base a los valores q del estado actual
                     if (randomNumber >= parametros.epsilon)
                     {
                         nextDirection = tablaq.buscaMejorDireccion(indice);
@@ -116,46 +114,48 @@ namespace QMind
                     {
                         nextDirection = UnityEngine.Random.Range(0, 4);
                     }
-                    CellInfo nextPos = getNextPos(nextDirection, path[0], indice, playerState);
+
+                    CellInfo nextPos = getNextPos(nextDirection, path[0], indice);  // Obtener la siguiente posición del perseguido
+                    // Nuevas posiciones de los personajes
                     AgentPosition = nextPos;
-                    OtherPosition = path[0]; // calcularlo despues - Cosas diferentes
-                    CurrentStep++;
+                    OtherPosition = path[0];
+                    CurrentStep++;  // siguiente paso sin ser perseguido o salirse de posiciones caminables
                 }
-                // Os dejo esto aqui pero deberiais de tener un metodo que os diga
-                // si algo es terminal o no
-                // Encapsulariais toda la logica para acabarlo facilmente ;)
+                // Si el perseguidor ha colisionado con el perseguido, se acaba el episodio
                 else
                 {
                     OnEpisodeFinished?.Invoke(this, EventArgs.Empty);
                     episodeWorking = false;
                 }
             }
+            //-------------------- FIN CONTINUAR EPISODIO --------------------
         }
 
+        #endregion
 
-        #region Metodo obtener estados
+        #region Metodo Secundarios
+
+        // ------------------- MÉTODO PARA OBTENER ESTADOS -----------------------
         public State getState(CellInfo agent, CellInfo other, WorldInfo worldInfo, TablaQ tablaq)
         {
-            Vector2 dif = new Vector2(other.x, other.y) - new Vector2(agent.x, agent.y);
-            //float signedangle = Mathf.Atan2(other.y - agent.y, other.x - agent.x) * Mathf.Rad2Deg; // Calcular el angulo en grados hacia el oponente            
-            float signedangle = Vector2.SignedAngle(new Vector2(1, 0), dif); // Calcular el angulo en grados hacia el oponente            
-
+            // ------------ CÁLCULO CUADRANTE ---------------
+            Vector2 dif = new Vector2(other.x, other.y) - new Vector2(agent.x, agent.y);   // Diferencia entre ambos personajes      
+            float signedangle = Vector2.SignedAngle(new Vector2(1, 0), dif); // Calcular el angulo con signo en grados hacia el oponente            
             signedangle = (signedangle - (tablaq.angCuadrantes / 2));    // Calcular el cuadrante del oponente en base al angulo en Cº
+            // Cambiar a grado equivalente positivo
             if (signedangle < 0)
             {
                 signedangle += 360;
             }
             int cuadrante = (int)(signedangle / tablaq.angCuadrantes); // Calcula el indice del cuadrante perteneciente
+            // ------------ FIN CÁLCULO CUADRANTE ---------------
 
-            //Debug.Log(cuadrante);
-
+            // ------------ CÁLCULO RANGO DE DISTANCIA ---------------
             //// Calcular distancia del agente a su oponente
             // distancia_Manhattan=|x2-x1|+|y2-y1|
             float dist = agent.Distance(other, CellInfo.DistanceType.Manhattan);
 
-            // Calculo la franja de distancia (el min deberia seleccionar siempre al de la izq,
-            // pero el caso de ser distancia 40 clavado podría salir 3 y el floor a 3 en vez de 2.9999 con floor a 2)
-            //int cercano = (int)Math.Min(Math.Floor(dist / (40 / tablaq.numFranjasDist)), (tablaq.numFranjasDist - 1));
+            // Calculo la franja de distancia
             int cercano;
             if      (dist >= 0 && dist <= tablaq.franja1) { cercano = 0; }
             else if (dist > tablaq.franja1 && dist <= tablaq.franja2) { cercano = 1; }
@@ -166,71 +166,30 @@ namespace QMind
                 Debug.Log("Las franjas de distancia obtenida no esta en las franjas delimitadas, revise las franjas en TablaQ.cs");
                 cercano = 3;
             }
-            // Devuelve si arriba hay muro
+            // ------------ FIN CÁLCULO RANGO DE DISTANCIA ---------------
+
+            // ------------ CÁLCULO DE PAREDES ---------------
             CellInfo up = worldInfo.NextCell(agent, Directions.Up);
             CellInfo right = worldInfo.NextCell(agent, Directions.Right);
             CellInfo down = worldInfo.NextCell(agent, Directions.Down);
             CellInfo left = worldInfo.NextCell(agent, Directions.Left);
 
-            #region comprobar si hay muros
             //  1 si hay muro, 0 si no hay nada
             int upw = up.Walkable ? 0 : 1;
             int rightw = right.Walkable ? 0 : 1;
             int downw = down.Walkable ? 0 : 1;
             int leftw = left.Walkable ? 0 : 1;
-            /*
-            int upw;
-            int rightw;
-            int downw;
-            int leftw;
-
-            if (up.Walkable)
-            {
-                upw = 0;
-            }
-            else
-            {
-                upw = 1;
-            }
-
-            if (right.Walkable)
-            {
-                rightw = 0;
-            }
-            else
-            {
-                rightw = 1;
-            }
-
-            if (down.Walkable)
-            {
-                downw = 0;
-            }
-            else
-            {
-                downw = 1;
-            }
-
-            if (left.Walkable)
-            {
-                leftw = 0;
-            }
-            else
-            {
-                leftw = 1;
-            }
-            */
-            #endregion
+            // ------------ FIN CÁLCULO DE PAREDES ---------------
 
             // Escribir todos los datos en el estado actual del personaje
             State playerState = new State(upw, rightw, downw, leftw, cercano, cuadrante);
 
             return playerState;
         }
-        #endregion
+ 
 
-        #region Metodo para obtener siguiente posicion del personaje
-        private CellInfo getNextPos(int direction, CellInfo otherFuturePosition, int index, State currentState)
+        // ------------------- MÉTODO PARA OBTENER SIGUIENTE POSICIÓN -----------------------
+        private CellInfo getNextPos(int direction, CellInfo otherFuturePosition, int index)
         {
             CellInfo auxNextPos = new CellInfo(0, 0);
 
@@ -251,33 +210,30 @@ namespace QMind
                     break;
             }
 
-            // Estado siguiente
-            State nextState = getState(auxNextPos, otherFuturePosition, worldInfo, tablaq); // Obtengo el estado futuro
-            int nextindice = tablaq.buscaIndiceEstado(nextState);
-            // Recompensa
-            float r;
+            State nextState = getState(auxNextPos, otherFuturePosition, worldInfo, tablaq); // Estado futuro
+            int nextindice = tablaq.buscaIndiceEstado(nextState);   // indice del Estado futuro           
+            float r;    // Recompensa
 
-            //--------------------- CALCULAR VALOR Q DEL ESTADO EN ESA ACCIoN -------------------
+            //--------------------- CALCULAR VALOR Q DEL ESTADO EN ESA ACCIÓN -------------------
             // SI SIGUIENTE POSICION CAMINABLE
             if (auxNextPos.Walkable)
             {
-                // Distancia entre la pos vieja del zombie y pos vieja del perseguidor // bien
+                // Distancia entre la pos vieja del zombie y pos vieja del perseguidor
                 float distActual = AgentPosition.Distance(OtherPosition, CellInfo.DistanceType.Manhattan);
-                // Distancia entre la pos nueva del zombie y pos nueva del perseguidor // mal
+                // Distancia entre la pos nueva del zombie y pos nueva del perseguidor
                 float distNew = auxNextPos.Distance(otherFuturePosition, CellInfo.DistanceType.Manhattan);
-                // Distancia entre la pos nueva del zombie y pos vieja del perseguidor // bien
+                // Distancia entre la pos nueva del zombie y pos vieja del perseguidor
                 float distNewCross = auxNextPos.Distance(OtherPosition, CellInfo.DistanceType.Manhattan);
 
-                r = Reward(distActual, distNew, distNewCross);
-                UpdateQ(index, direction, nextindice, r);
+                r = Reward(distActual, distNew, distNewCross);  // Establecer la recompensa
+                UpdateQ(index, direction, nextindice, r);   // Cálcular nuevo valor q de la acción del estado
             }
             // SI SIGUIENTE POSICION NO CAMINABLE
             else
             {
-
-                Debug.Log("estado actualizado: " + currentState.up + " " + currentState.right + " " + currentState.down + " " + currentState.left + " " + currentState.cercania + " " + currentState.cuadrante);
-                r = -100;
-                UpdateQ(index, direction, nextindice, r);
+                r = -100f;  //Penalización
+                UpdateQ(index, direction, nextindice, r);   // Cálcular nuevo valor q de la acción del estado
+                // Fin del episodio
                 episodeWorking = false;
                 OnEpisodeFinished?.Invoke(this, EventArgs.Empty);
             }
@@ -285,11 +241,11 @@ namespace QMind
 
             return auxNextPos;
         }
-        #endregion
-        #region gestion tabla corto
+
+        // ------------------- MÉTODO PARA ACTUALIZAR VALOR Q |ESTADO - ACCIÓN ELEGIDA| -----------------------
         private void UpdateQ(int index, int direction, int nextindice, float reward)
         {
-            // Aplicar la formula
+            // Aplicar la formula Q(S,A) = (1 - alpha)*Q(S,A) + alpha*(recompensa + (gamma * Max(Q(S',A')) 
             tablaq.listValues[index][direction] = (1 - parametros.alpha) * (tablaq.listValues[index][direction]) +
             parametros.alpha * (reward + parametros.gamma * (tablaq.listValues[nextindice].Max()));
 
@@ -298,35 +254,36 @@ namespace QMind
             Return = totalRewards.Sum();
             ReturnAveraged = totalRewards.Sum() / totalRewards.Count();
         }
+
+        // ------------------- MÉTODO PARA SELECCIONAR RECOMPENSA |ESTADO - ACCIÓN ELEGIDA| -----------------------
         private float Reward(float distActual, float distNew, float distNewCross)
         {
-            float auxR;
-            // Si el agente se ha alejado del enemigo
-            //if (currentState.cercania <= nextState.cercania)
+            float auxR; // recompensa seleccionada
 
             // Si colisionan
-            if (distNew <= 0 || distNewCross <= 0)
+            if (distNew == 0 || distNewCross == 0)
             {
                 auxR = -100f;
                 episodeWorking = false;
                 OnEpisodeFinished?.Invoke(this, EventArgs.Empty);
                 //Debug.Log("Recompensa " + r);
             }
-            //// Si se aleja
-            //else if (distNew > distActual)
-            //{
-            //    auxR = 50f;
-            //}
+            // Si se aleja
+            else if (distNew > distActual)
+            {
+                auxR = 0f;
+            }
             // Si se ha acercado al enemigo
             else if (distNew < distActual)
             {
-                auxR = -50f;
+                auxR = -10f;
             }
             // Si se han mantenido las distancias
             else
             {
                 auxR = 0f;
             }
+
             return auxR;
         }
         #endregion

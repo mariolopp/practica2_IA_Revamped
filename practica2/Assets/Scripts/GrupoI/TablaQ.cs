@@ -7,42 +7,36 @@ using Unity.VisualScripting.FullSerializer;
 using UnityEngine;
 using static UnityEngine.Rendering.DebugUI;
 
+// ------------- CLASE PARA CREACIÓN Y MODIFICACIÓN DE LA TABLA Q --------------------
 public class TablaQ
 {
     //---------- INFORMACIÓN ------------------
-        // [0|1, 0|1, 0|1, 0|1, 0|1|2|3, 0|1|2|3 ] → array de la lista de State
-        // [up, right, down, left] → Uno por cada indice de la lista de 'State'
-        // Indican los valores de la tablaq que el personaje puede tener en cuenta al moverse
+    // [0|1, 0|1, 0|1, 0|1, 0|1|2|3, 0|1|2|3 ] → array de la lista de State
+    // [up, right, down, left] → Uno por cada indice de la lista de 'State'
+    // Indican los valores de la tablaq que el personaje puede tener en cuenta al moverse
 
-        // Lista de objetos State, cada uno indica:
-        // Si el personaje tiene muros a su alrededor up, left, right, down
-        // si el enemigo esta a distancia baja, media o alta (cercania)
-        // y el cuadrante en el que se situa el enemigo en base
-        // a la posicion del personaje (cuadrante)
-        // por ej si el personaje esta en <5,5> y el enemigo esta en <10,10>
-        // se consideraría que el enemigo esta en el cuadrante 0 
-        //  1 | 0
-        // ---+---  (por si olvidaste dibujo tecnico ;) )
-        //  2 | 3
-        // ejemplo: [left, up, right, down, distance, direction ], [ ... ]
+    // Lista de objetos State, cada uno indica:
+    // Si el personaje tiene muros a su alrededor up, right, down, left
+    // si el enemigo esta a distancia baja, media o alta (cercania)
+    // y el cuadrante en el que se situa el enemigo en base
+    // a la posicion del personaje (8 cuadrantes)
+    // ejemplo: [left, up, right, down, distance, direction ], [ ... ]
     //------------------------------------------
-    
+
     #region Variables
 
-    public int hayMuro = 2;  // 2 posibles casos
-    public int numFranjasDist = 4;  // 3 posibles franjas de distancia
-    
-    public int franja1=2, franja2=10, franja3 = 25, franja4=40;    // el maximo dist es 40, poner en la ultima un 40 siempre
-    // La distancia esta entre franjaAnterior(sin incluir) a franjaSig(incluida) excepto la primera que si incluye el 0
-    // Por ej f1=1, f2=3 f3=40: 0-1: cerc=0; (1)-3: cerc=1; (3)-40 cerc=2;  Parentesis si num es no inclusive
-
-    public int numCuadrantes = 8;   // 4 u 8 posibles cuadrantes enemigo respecto al agente
-    public int angCuadrantes {get => 360/numCuadrantes;}
-    //public int tamFranjaDist = 10;
+    public int hayMuro = 2;  // 2 posibles casos (si hay o si no)
+    public int numFranjasDist = 4;  // 4 posibles franjas de distancia    
+    public int franja1=2, franja2=10, franja3 = 25, franja4=40;    // el maximo de distancia es 40, la primera franja es los personajes juntos
+    public int numCuadrantes = 8;   // 8 cuadrantes enemigo respecto al agente
+    public int angCuadrantes {get => 360/numCuadrantes;}    // Calcula el ángulo de cada cuadrante
     public string ruta = Application.dataPath + "/Scripts/GrupoI/" + "Qtable.csv";    //Ruta archivo CSV
     public List<State> listStates;  // Lista de estados   
-    public List<float[]> listValues;    // valores Q de las acciones de cada estado
-
+    public List<float[]> listValues;    // tabla Q con los estados y sus acciones
+    
+    // ------------------- RESETEO DE LA TABLA -------------------
+    bool resetTabla = false;    
+    // -----------------------------------------------------------
     #endregion
 
     #region Constructor
@@ -50,7 +44,7 @@ public class TablaQ
         listStates = new List<State>();
         listValues = new List<float[]>();
 
-        //INICIALIZACIÓN ESTADOS
+        // -------------- INICIALIZACIÓN ESTADOS ----------------------------
         int i = 0;
         for (int i0 = 0; i0 < hayMuro; i0++)
         {
@@ -66,9 +60,7 @@ public class TablaQ
                             {
                                 State addS = new State(i0, i1, i2, i3, i4, i5);
                                 listStates.Add(addS);                                
-                                listValues.Add(new float[] { 0f, 0f, 0f, 0f });   // Añadir datos inicializados a 0 a la tabla
-
-                                //Debug.Log("Estado num: "+i +" "+ addS.up +", "+ addS.right + ", " + addS.down + ", " + addS.left + ", " + addS.cercania + ", " + addS.cuadrante);
+                                listValues.Add(new float[] { 0f, 0f, 0f, 0f });   // Añadir datos inicializados a 0 a la tabla q
                                 i++;
                             }
                         }
@@ -76,23 +68,30 @@ public class TablaQ
                 }
             }
         }
+        // -------------------------------------------------------------------
 
-
-
-        // Si descomentas aquí te va a guardar una tabla todo a 0 (que son los valores que tiene listValues por el for)
-        //guardarCSV(ruta);   
-
+        // Vuelve a poner los valores de la tabla a 0 (si se quiere reiniciar entrenamiento)
+        if (resetTabla)
+        {
+            guardarCSV(ruta);
+        }
+        // Carga los valores del archivo CSV en la lista listValues
         cargarCSV();
-        //guardarCSV("Qbackup.csv");
     }
 
     #endregion
 
     #region Métodos de busqueda
+
+    // --------------  MÉTODO BÚSQUEDA DEL ESTADO EN LA LISTA DE ESTADOS --------------------------
+    // Devuelve el indice del estado de la lista de estados listStates
     public int buscaIndiceEstado(State state) {
         int index = listStates.IndexOf(state);
         return index;
     }
+
+    // -------------- MÉTODO BÚSQUEDA DE LA ACCIÓN CON MAYOR VALOR Q DEL ESTADO --------------------------
+    // Devuelve el indice de la mejor acción del estado de la lista listValues
     public int buscaMejorDireccion(int index) {
         float bestValue = listValues[index].Max();
         int bestIndex = Array.IndexOf(listValues[index], bestValue);
@@ -100,15 +99,13 @@ public class TablaQ
         // 0 = up, 1 = right, 2 = down, 3 = left
         return bestIndex;
     }
-
     #endregion
 
     #region Métodos de tratado de archivos
 
-    // SOBREESCRIBE LISTA DE VALORES Q A PARTIR DE UN ARCHIVO CSV
+    // ---------------- MÉTODO GUARDADO DE VALORES DE LA TABLA Q DE ARCHIVO CSV A LISTA LISTVALUES -------------------------
     public void cargarCSV()
-    {
-       
+    {       
         try
         {
             using (StreamReader reader = new StreamReader(ruta))
@@ -151,7 +148,7 @@ public class TablaQ
     }
 
 
-    /// GUARDAR LISTA DE VALORES Q EN UN ARCHIVO CSV
+    // ---------------- MÉTODO GUARDADO DE VALORES DE LA LISTA LISTVALUES AL ARCHIVO CSV -------------------------
     public void guardarCSV(string ruta)
     {
         // Crear un StreamWriter para escribir en el archivo CSV

@@ -27,7 +27,7 @@ public class TablaQ
 
     public int hayMuro = 2;  // 2 posibles casos (si hay o si no)
     public int numFranjasDist = 4;  // 4 posibles franjas de distancia    
-    public int franja1=2, franja2=10, franja3 = 25, franja4=40;    // el maximo de distancia es 40, la primera franja es los personajes juntos
+    public int franja1=1, franja2=2, franja3 = 10, franja4=40;    // el maximo de distancia es 40, la primera franja es los personajes juntos
     public int numCuadrantes = 8;   // 8 cuadrantes enemigo respecto al agente
     public int angCuadrantes {get => 360/numCuadrantes;}    // Calcula el ángulo de cada cuadrante
     public string ruta = Application.dataPath + "/Scripts/GrupoI/" + "Qtable.csv";    //Ruta archivo CSV
